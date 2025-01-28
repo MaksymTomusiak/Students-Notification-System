@@ -1,5 +1,8 @@
-﻿using Domain.Roles;
+﻿using Application.Common.Interfaces.Queries;
+using Application.Common.Interfaces.Repositories;
+using Domain.Roles;
 using Domain.Users;
+using Infrastructure.Persistence.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -43,6 +46,24 @@ public static class ConfigurePersistence
 
     private static void AddRepositories(this IServiceCollection services)
     {
+        services.AddScoped<CategoryRepository>();
+        services.AddScoped<ICategoryRepository>(provider => provider.GetRequiredService<CategoryRepository>());
+        services.AddScoped<ICategoryQueries>(provider => provider.GetRequiredService<CategoryRepository>());
         
+        services.AddScoped<CourseRepository>();
+        services.AddScoped<ICourseRepository>(provider => provider.GetRequiredService<CourseRepository>());
+        services.AddScoped<ICourseQueries>(provider => provider.GetRequiredService<CourseRepository>());
+        
+        services.AddScoped<CourseCategoryRepository>();
+        services.AddScoped<ICourseCategoryRepository>(provider => provider.GetRequiredService<CourseCategoryRepository>());
+        services.AddScoped<ICourseCategoryQueries>(provider => provider.GetRequiredService<CourseCategoryRepository>());
+        
+        services.AddScoped<FeedbackRepository>();
+        services.AddScoped<FeedbackRepository>(provider => provider.GetRequiredService<FeedbackRepository>());
+        services.AddScoped<IFeedbackQueries>(provider => provider.GetRequiredService<FeedbackRepository>());
+        
+        services.AddScoped<RegisterRepository>();
+        services.AddScoped<IRegisterRepository>(provider => provider.GetRequiredService<RegisterRepository>());
+        services.AddScoped<IRegisterQueries>(provider => provider.GetRequiredService<RegisterRepository>());
     }
 }
