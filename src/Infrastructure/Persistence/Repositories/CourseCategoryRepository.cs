@@ -25,6 +25,14 @@ public class CourseCategoryRepository(ApplicationDbContext context) : ICourseCat
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<CourseCategory>> GetByCategory(CategoryId categoryId, CancellationToken cancellationToken)
+    {
+        return await context.CourseCategories
+            .AsNoTracking()
+            .Where(x => x.CategoryId == categoryId)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<Option<CourseCategory>> GetById(CourseCategoryId id, CancellationToken cancellationToken)
     {
         var entity = await context.CourseCategories

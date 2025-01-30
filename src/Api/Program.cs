@@ -1,4 +1,5 @@
 using Api.Modules;
+using Application;
 using Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -6,7 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Configure application services
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddControllers();
-//builder.Services.AddApplication(); //ToDO
+builder.Services.AddApplication();
 builder.Services.SetupServices();
 
 // Add services to the container.
@@ -38,3 +39,5 @@ await app.InitializeDb();
 app.MapControllers();
 
 app.Run();
+
+public partial class Program;
