@@ -2,7 +2,7 @@
 
 namespace Tests.Data;
 
-public class CategoriesData
+public static class CategoriesData
 {
     public static Category MainCategory =>
         Category.New(CategoryId.New(), "Main category name");

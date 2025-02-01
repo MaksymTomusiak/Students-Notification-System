@@ -56,6 +56,7 @@ public class CourseRepository(ApplicationDbContext context) : ICourseRepository,
     {
         var entity = await context.Courses
             .AsNoTracking()
+            .Include(x => x.Creator)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
         
         return entity == null ? Option<Course>.None: Option<Course>.Some(entity);

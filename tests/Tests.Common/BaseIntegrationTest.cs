@@ -1,8 +1,11 @@
 ﻿using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
+using Domain.Roles;
+using Domain.Users;
 using Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -15,6 +18,8 @@ public abstract class BaseIntegrationTest : IClassFixture<IntegrationTestWebFact
 {
     protected readonly ApplicationDbContext Context;
     protected readonly HttpClient Client;
+    protected readonly UserManager<User> UserManager;
+    protected readonly RoleManager<Role> RoleManager;
     //private readonly IJwtProvider _jwtProvider;
 
     protected BaseIntegrationTest(IntegrationTestWebFactory factory)
@@ -28,7 +33,9 @@ public abstract class BaseIntegrationTest : IClassFixture<IntegrationTestWebFact
             {
                 AllowAutoRedirect = false,
             });
-
+        UserManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+        RoleManager = scope.ServiceProvider.GetRequiredService<RoleManager<Role>>();
+        
         // Use test data for generating a JWT token
         //var user = UsersData.MainUser(RolesData.AdminRole.Id, ProfileId.Empty());
         //Client.DefaultRequestHeaders.Authorization =
