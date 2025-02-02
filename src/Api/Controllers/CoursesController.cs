@@ -4,11 +4,12 @@ using Application.Common.Interfaces.Queries;
 using Application.Courses.Commands;
 using Domain.Courses;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
 
-//[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin")]
 [Route("courses")]
 [ApiController]
 public class CoursesController(ISender sender, ICourseQueries courseQueries) : ControllerBase

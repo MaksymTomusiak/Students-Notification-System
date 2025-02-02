@@ -1,6 +1,7 @@
 ﻿using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
+using Application.Common.Interfaces;
 using Domain.Roles;
 using Domain.Users;
 using Infrastructure.Persistence;
@@ -10,6 +11,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Tests.Data;
 using Xunit;
 
 namespace Tests.Common;
@@ -20,13 +22,13 @@ public abstract class BaseIntegrationTest : IClassFixture<IntegrationTestWebFact
     protected readonly HttpClient Client;
     protected readonly UserManager<User> UserManager;
     protected readonly RoleManager<Role> RoleManager;
-    //private readonly IJwtProvider _jwtProvider;
+    private readonly IJwtProvider _jwtProvider;
 
     protected BaseIntegrationTest(IntegrationTestWebFactory factory)
     {
         var scope = factory.Services.CreateScope();
         Context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        //_jwtProvider = scope.ServiceProvider.GetRequiredService<IJwtProvider>();
+        _jwtProvider = scope.ServiceProvider.GetRequiredService<IJwtProvider>();
 
         Client = factory.WithWebHostBuilder(builder => { })
             .CreateClient(new WebApplicationFactoryClientOptions
@@ -37,9 +39,9 @@ public abstract class BaseIntegrationTest : IClassFixture<IntegrationTestWebFact
         RoleManager = scope.ServiceProvider.GetRequiredService<RoleManager<Role>>();
         
         // Use test data for generating a JWT token
-        //var user = UsersData.MainUser(RolesData.AdminRole.Id, ProfileId.Empty());
-        //Client.DefaultRequestHeaders.Authorization =
-        //    new AuthenticationHeaderValue("Bearer", _jwtProvider.Generate(user, RolesData.AdminRole));
+        var user = UsersData.NewUser("testAdmin@gmail.com", "testAdmin", "testPasswordHash");
+        Client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", _jwtProvider.Generate(user, RolesData.AdminRole));
     }
 
     protected async Task<int> SaveChangesAsync()
