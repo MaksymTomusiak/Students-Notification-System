@@ -16,3 +16,12 @@ public record UserDto(
             roles ?? []);
 
 }
+
+public record UserLoginDto(
+    string Email,
+    string Password);
+    
+public record UserRegisterDto(
+    string UserName,
+    string Email,
+    string Password);

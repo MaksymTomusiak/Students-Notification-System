@@ -1,9 +1,11 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Json;
+using Api.Dtos;
 using Domain.Categories;
 using Domain.CourseCategories;
 using Domain.Courses;
+using Domain.Registers;
 using Domain.Roles;
 using Domain.Users;
 using FluentAssertions;
@@ -27,6 +29,7 @@ public class UsersControllerTests: BaseIntegrationTest, IAsyncLifetime
     private readonly Role _adminRole = RolesData.AdminRole;
     private readonly Course _mainCourse;
     private readonly CourseCategory _mainCourseCategory;
+    private readonly Register _mainRegister;
     private const string TestPassword = "TestPass123!";
     
     public UsersControllerTests(IntegrationTestWebFactory factory) : base(factory)
@@ -36,6 +39,7 @@ public class UsersControllerTests: BaseIntegrationTest, IAsyncLifetime
         _testAdminUser = UsersData.AdminUser();
         _mainCourse = CoursesData.MainCourse(_mainUser.Id);
         _mainCourseCategory = CourseCategoriesData.New(_mainCourse.Id, _mainCategory.Id);
+        _mainRegister = RegistersData.New(_testAdminUser.Id, _mainCourse.Id);
     }
 
     [Fact]
@@ -288,7 +292,7 @@ public class UsersControllerTests: BaseIntegrationTest, IAsyncLifetime
     [Fact]
     public async Task ShouldNotDeleteAdminByAnotherAdminUser()
     {
-        // Arrange4
+        // Arrange
         var userId = _testAdminUser.Id;
 
         // Act
@@ -303,6 +307,109 @@ public class UsersControllerTests: BaseIntegrationTest, IAsyncLifetime
         dbUser.Should().NotBeNull();
     }
     
+    [Fact]
+    public async Task ShouldEnrollUserOnCourse()
+    {
+        // Arrange
+        var courseId = _mainCourse.Id;
+        SetCustomAuthorizationHeader(JwtProvider.Generate(_secondaryUser, _userRole));
+
+        // Act
+        var response = await Client.PostAsync($"users/enroll-on-course/{courseId}", null);
+        
+        // Assert
+        response.IsSuccessStatusCode.Should().BeTrue();
+        var responseRegister = await response.ToResponseModel<RegisterDto>();
+        var registerId = new RegisterId(responseRegister.Id);
+        
+        // Retrieve the register from the database
+        var dbRegister = await Context.Registers.FirstOrDefaultAsync(x => x.Id == registerId);
+        dbRegister.Should().NotBeNull();
+        dbRegister!.UserId.Should().Be(_secondaryUser.Id);
+        dbRegister.CourseId.Should().Be(courseId);
+    }
+    
+    [Fact]
+    public async Task ShouldNotEnrollUserBecauseAlreadyEnrolledOnCourse()
+    {
+        // Arrange
+        var courseId = _mainCourse.Id;
+        SetCustomAuthorizationHeader(JwtProvider.Generate(_testAdminUser, _userRole));
+
+        // Act
+        var response = await Client.PostAsync($"users/enroll-on-course/{courseId}", null);
+        
+        // Assert
+        response.IsSuccessStatusCode.Should().BeFalse();
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+    
+    [Fact]
+    public async Task ShouldNotEnrollUserBecauseCourseNotFound()
+    {
+        // Arrange
+        var courseId = Guid.NewGuid();
+        SetCustomAuthorizationHeader(JwtProvider.Generate(_secondaryUser, _userRole));
+
+        // Act
+        var response = await Client.PostAsync($"users/enroll-on-course/{courseId}", null);
+        
+        // Assert
+        response.IsSuccessStatusCode.Should().BeFalse();
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+    
+    [Fact]
+    public async Task ShouldUnregisterUserFromCourse()
+    {
+        // Arrange
+        var courseId = _mainCourse.Id;
+        SetCustomAuthorizationHeader(JwtProvider.Generate(_testAdminUser, _userRole));
+
+        // Act
+        var response = await Client.DeleteAsync($"users/unregister-from-course/{courseId}");
+        
+        // Assert
+        response.IsSuccessStatusCode.Should().BeTrue();
+        var responseRegister = await response.ToResponseModel<RegisterDto>();
+        var registerId = new RegisterId(responseRegister.Id);
+        
+        // Retrieve the register from the database
+        var dbRegister = await Context.Registers.FirstOrDefaultAsync(x => x.Id == registerId);
+        dbRegister.Should().BeNull();
+    }
+    
+    [Fact]
+    public async Task ShouldNotUnregisterUserFromCourseBecauseUserNotRegistered()
+    {
+        // Arrange
+        var courseId = _mainCourse.Id;
+        SetCustomAuthorizationHeader(JwtProvider.Generate(_mainUser, _userRole));
+
+        // Act
+        var response = await Client.DeleteAsync($"users/unregister-from-course/{courseId}");
+        
+        // Assert
+        response.IsSuccessStatusCode.Should().BeFalse();
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+    
+    [Fact]
+    public async Task ShouldNotUnregisterUserFromCourseBecauseCourseNotFound()
+    {
+        // Arrange
+        var courseId = Guid.NewGuid();
+        SetCustomAuthorizationHeader(JwtProvider.Generate(_testAdminUser, _userRole));
+
+        // Act
+        var response = await Client.DeleteAsync($"users/unregister-from-course/{courseId}");
+        
+        // Assert
+        response.IsSuccessStatusCode.Should().BeFalse();
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    
     public async Task InitializeAsync()
     {
         await RoleManager.CreateAsync(_userRole);
@@ -316,11 +423,13 @@ public class UsersControllerTests: BaseIntegrationTest, IAsyncLifetime
         await Context.Categories.AddRangeAsync(_mainCategory, _secondaryCategory);
         await Context.Courses.AddAsync(_mainCourse);
         await Context.CourseCategories.AddAsync(_mainCourseCategory);
+        await Context.Registers.AddAsync(_mainRegister);
         await SaveChangesAsync();
     }
 
     public async Task DisposeAsync()
     {
+        Context.Registers.RemoveRange(Context.Registers);
         Context.CourseCategories.RemoveRange(Context.CourseCategories);
         Context.Courses.RemoveRange(Context.Courses);
         Context.Categories.RemoveRange(Context.Categories);
