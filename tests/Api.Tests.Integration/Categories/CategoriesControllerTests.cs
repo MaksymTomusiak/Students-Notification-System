@@ -183,7 +183,7 @@ public class CategoriesControllerTests : BaseIntegrationTest, IAsyncLifetime
         Context.CourseCategories.RemoveRange(Context.CourseCategories);
         Context.Courses.RemoveRange(Context.Courses);
         Context.Categories.RemoveRange(Context.Categories);
-        await UserManager.DeleteAsync(_mainUser);
+        Context.Users.RemoveRange(Context.Users);
         await SaveChangesAsync();
     }
 }

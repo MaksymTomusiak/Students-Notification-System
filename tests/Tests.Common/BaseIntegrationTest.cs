@@ -22,13 +22,18 @@ public abstract class BaseIntegrationTest : IClassFixture<IntegrationTestWebFact
     protected readonly HttpClient Client;
     protected readonly UserManager<User> UserManager;
     protected readonly RoleManager<Role> RoleManager;
-    private readonly IJwtProvider _jwtProvider;
+    protected readonly IJwtProvider JwtProvider;
+    private readonly User _adminUser = UsersData.NewUser(
+        "testAdmin@gmail.com", 
+        "testAdmin", 
+        "testPasswordHash");
+    private readonly Role _adminRole = RolesData.AdminRole;
 
     protected BaseIntegrationTest(IntegrationTestWebFactory factory)
     {
         var scope = factory.Services.CreateScope();
         Context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        _jwtProvider = scope.ServiceProvider.GetRequiredService<IJwtProvider>();
+        JwtProvider = scope.ServiceProvider.GetRequiredService<IJwtProvider>();
 
         Client = factory.WithWebHostBuilder(builder => { })
             .CreateClient(new WebApplicationFactoryClientOptions
@@ -39,9 +44,46 @@ public abstract class BaseIntegrationTest : IClassFixture<IntegrationTestWebFact
         RoleManager = scope.ServiceProvider.GetRequiredService<RoleManager<Role>>();
         
         // Use test data for generating a JWT token
-        var user = UsersData.NewUser("testAdmin@gmail.com", "testAdmin", "testPasswordHash");
+        SetAdminAuthorizationHeaderAsync().GetAwaiter().GetResult();
+    }
+
+    protected async Task SetAdminAuthorizationHeaderAsync()
+    {
+        await SaveAdminAsync();
+        SetCustomAuthorizationHeader(JwtProvider.Generate(_adminUser, _adminRole));
+    }
+
+    private async Task SaveAdminAsync()
+    {
+        if (await RoleManager.FindByNameAsync(_adminRole.Name!) == null)
+        {
+            await RoleManager.CreateAsync(_adminRole);
+        }
+
+        var user = await UserManager.FindByEmailAsync(_adminUser.Email);
+        if (user == null)
+        {
+            var createUserResult = await UserManager.CreateAsync(_adminUser, "AdminPass123!");
+            if (!createUserResult.Succeeded)
+            {
+                throw new Exception($"Failed to create admin user: {string.Join(", ", createUserResult.Errors.Select(e => e.Description))}");
+            }
+        }
+
+        if (!await UserManager.IsInRoleAsync(_adminUser, _adminRole.Name!))
+        {
+            var addToRoleResult = await UserManager.AddToRoleAsync(_adminUser, _adminRole.Name!);
+            if (!addToRoleResult.Succeeded)
+            {
+                throw new Exception($"Failed to add admin role: {string.Join(", ", addToRoleResult.Errors.Select(e => e.Description))}");
+            }
+        }
+    }
+
+    protected void SetCustomAuthorizationHeader(string token)
+    {
         Client.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", _jwtProvider.Generate(user, RolesData.AdminRole));
+            new AuthenticationHeaderValue("Bearer", token);
     }
 
     protected async Task<int> SaveChangesAsync()
