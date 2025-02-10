@@ -1,4 +1,5 @@
-﻿using Domain.Roles;
+﻿using Domain.Feedbacks;
+using Domain.Roles;
 using Domain.Users;
 
 namespace Api.Dtos;
@@ -9,7 +10,7 @@ public record UserDto(
     string Email,
     IList<string>? Roles)
 {
-    public static UserDto FromDomainModel(User user, IList<string>? roles)
+    public static UserDto FromDomainModel(User user, IList<string>? roles = null)
         => new(user.Id,
             user.UserName, 
             user.Email, 
@@ -25,3 +26,8 @@ public record UserRegisterDto(
     string UserName,
     string Email,
     string Password);
+    
+public record UserUpdateDto(
+    string PhoneNumber,
+    string OldPassword,
+    string NewPassword);

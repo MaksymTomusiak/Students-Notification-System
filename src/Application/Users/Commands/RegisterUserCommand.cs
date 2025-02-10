@@ -20,6 +20,7 @@ public class RegisterUserCommandHandler(
     UserManager<User> userManager,
     RoleManager<Role> roleManager) : IRequestHandler<RegisterUserCommand, Either<UserException, string>>
 {
+    private const string UserRoleName = "User";
     public async Task<Either<UserException, string>> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
     {
         var existingEmailUser = await userManager.FindByEmailAsync(request.Email);
@@ -45,18 +46,17 @@ public class RegisterUserCommandHandler(
         {
             return new InvalidCredentialsException();
         }
-
-        var roleName = "User";
-        if (!await roleManager.RoleExistsAsync(roleName))
+        
+        if (!await roleManager.RoleExistsAsync(UserRoleName))
         {
             await roleManager.CreateAsync(new Role {
                 Id = Guid.NewGuid(),
-                Name = roleName
+                Name = UserRoleName
             });
         }
-        await userManager.AddToRoleAsync(user, roleName);
+        await userManager.AddToRoleAsync(user, UserRoleName);
 
-        var role = await roleManager.FindByNameAsync(roleName);
+        var role = await roleManager.FindByNameAsync(UserRoleName);
         return jwtProvider.Generate(user, role);
     }
 }

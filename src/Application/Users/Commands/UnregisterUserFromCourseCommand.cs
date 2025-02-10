@@ -50,7 +50,7 @@ public class UnregisterUserFromCourseCommandHandler(
                     () => Task.FromResult<Either<UserException, Register>>(
                         new UserNotRegisteredException(sessionUser.Id)));
             },
-            () => Task.FromResult<Either<UserException, Register>>(new RegisteredCourseNotFoundException()));
+            () => Task.FromResult<Either<UserException, Register>>(new RegisterCourseNotFoundException()));
     }
 
     private async Task<Either<UserException, Register>> RemoveRegister(Register register, Guid sessionUserId, CancellationToken cancellationToken)

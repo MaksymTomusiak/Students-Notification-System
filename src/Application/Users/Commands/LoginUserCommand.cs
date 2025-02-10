@@ -16,8 +16,10 @@ public record LoginUserCommand : IRequest<Either<UserException, string>>
 
 public class LoginUserCommandHandler(
     IJwtProvider jwtProvider,
-    UserManager<User> userManager) : IRequestHandler<LoginUserCommand, Either<UserException, string>>
+    UserManager<User> userManager,
+    RoleManager<Role> roleManager) : IRequestHandler<LoginUserCommand, Either<UserException, string>>
 {
+    const string UserRoleName = "User";
     public async Task<Either<UserException, string>> Handle(LoginUserCommand request, CancellationToken cancellationToken)
     {
         var user = await userManager.FindByEmailAsync(request.Email);
@@ -27,7 +29,19 @@ public class LoginUserCommandHandler(
         }
 
         var roles = await userManager.GetRolesAsync(user);
-        var roleName = roles.FirstOrDefault() ?? "User";
+        
+        if (roles.Count == 0)
+        {
+            var existingUserRole = await roleManager.FindByNameAsync(UserRoleName);
+            if (existingUserRole == null)
+            {
+                await roleManager.CreateAsync(new Role { Name = UserRoleName });
+            }
+            
+            await userManager.AddToRoleAsync(user, UserRoleName);
+        }
+        
+        var roleName = roles.FirstOrDefault() ?? UserRoleName;
 
         var role = new Role { Name = roleName };
 

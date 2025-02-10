@@ -2,9 +2,11 @@
 using System.Net;
 using System.Net.Http.Json;
 using Api.Dtos;
+using Application.Users.Commands;
 using Domain.Categories;
 using Domain.CourseCategories;
 using Domain.Courses;
+using Domain.Feedbacks;
 using Domain.Registers;
 using Domain.Roles;
 using Domain.Users;
@@ -13,8 +15,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Tests.Common;
 using Tests.Data;
-
-[assembly: CollectionBehavior(DisableTestParallelization = true)]
 
 namespace Api.Tests.Integration.Users;
 
@@ -30,6 +30,7 @@ public class UsersControllerTests: BaseIntegrationTest, IAsyncLifetime
     private readonly Course _mainCourse;
     private readonly CourseCategory _mainCourseCategory;
     private readonly Register _mainRegister;
+    private readonly Feedback _mainFeedback;
     private const string TestPassword = "TestPass123!";
     
     public UsersControllerTests(IntegrationTestWebFactory factory) : base(factory)
@@ -40,6 +41,7 @@ public class UsersControllerTests: BaseIntegrationTest, IAsyncLifetime
         _mainCourse = CoursesData.MainCourse(_mainUser.Id);
         _mainCourseCategory = CourseCategoriesData.New(_mainCourse.Id, _mainCategory.Id);
         _mainRegister = RegistersData.New(_testAdminUser.Id, _mainCourse.Id);
+        _mainFeedback = FeedbacksData.New(_mainUser.Id, _mainCourse.Id);
     }
 
     [Fact]
@@ -408,7 +410,148 @@ public class UsersControllerTests: BaseIntegrationTest, IAsyncLifetime
         response.IsSuccessStatusCode.Should().BeFalse();
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
+    
+    [Fact]
+    public async Task ShouldCreateFeedbackOnCourse()
+    {
+        // Arrange
+        var courseId = _mainCourse.Id;
+        var content = "Test content";
+        ushort rating = 3;
+        var request = new FeedbackCreateDto(courseId.Value, content, rating);
+        
+        SetCustomAuthorizationHeader(JwtProvider.Generate(_secondaryUser, _userRole));
 
+        // Act
+        var response = await Client.PostAsJsonAsync("users/add-feedback", request);
+        
+        // Assert
+        response.IsSuccessStatusCode.Should().BeTrue();
+        var responseFeedback = await response.ToResponseModel<FeedbackDto>();
+        var feedbackId = new FeedbackId(responseFeedback.Id);
+        
+        // Retrieve the register from the database
+        var dbFeedback = await Context.Feedbacks.FirstOrDefaultAsync(x => x.Id == feedbackId);
+        dbFeedback.Should().NotBeNull();
+        dbFeedback!.UserId.Should().Be(_secondaryUser.Id);
+        dbFeedback.CourseId.Should().Be(courseId);
+        dbFeedback.Content.Should().Be(content);
+        dbFeedback.Rating.Should().Be(rating);
+    }
+    
+    [Fact]
+    public async Task ShouldNotCreateFeedbackOnCourseBecauseCourseNotFound()
+    {
+        // Arrange
+        var courseId = Guid.NewGuid();
+        var content = "Test content";
+        ushort rating = 3;
+        var request = new FeedbackCreateDto(courseId, content, rating);
+        
+        SetCustomAuthorizationHeader(JwtProvider.Generate(_secondaryUser, _userRole));
+
+        // Act
+        var response = await Client.PostAsJsonAsync("users/add-feedback", request);
+        
+        // Assert
+        response.IsSuccessStatusCode.Should().BeFalse();
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+    
+    [Fact]
+    public async Task ShouldNotCreateFeedbackOnCourseBecauseUserAlreadyHasOne()
+    {
+        // Arrange
+        var courseId = _mainCourse.Id.Value;
+        var content = "Test content";
+        ushort rating = 3;
+        var request = new FeedbackCreateDto(courseId, content, rating);
+        SetCustomAuthorizationHeader(JwtProvider.Generate(_mainUser, _userRole));
+
+        // Act
+        var response = await Client.PostAsJsonAsync("users/add-feedback", request);
+        
+        // Assert
+        response.IsSuccessStatusCode.Should().BeFalse();
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+    
+    [Fact]
+    public async Task ShouldDeleteFeedbackOnCourse()
+    {
+        // Arrange
+        var feedbackId = _mainFeedback.Id;
+
+        // Act
+        var response = await Client.DeleteAsync($"users/delete-user-feedback/{feedbackId}");
+        
+        // Assert
+        response.IsSuccessStatusCode.Should().BeTrue();
+        var dbFeedback = await Context.Feedbacks.FirstOrDefaultAsync(x => x.Id == feedbackId);
+        dbFeedback.Should().BeNull();
+    }
+    
+    [Fact]
+    public async Task ShouldDeleteFeedbackOnCourseBecauseFeedbackNotFound()
+    {
+        // Arrange
+        var feedbackId = Guid.NewGuid();
+
+        // Act
+        var response = await Client.DeleteAsync($"users/delete-feedback/{feedbackId}");
+        
+        // Assert
+        response.IsSuccessStatusCode.Should().BeFalse();
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+    
+    [Fact]
+    public async Task ShouldUpdateUser()
+    {
+        // Arrange
+        const string phoneNumber = "+38 012-345-6789";
+        var oldPassword = TestPassword;
+        var newPassword = "Updated" + TestPassword;
+        var request = new UserUpdateDto(
+            phoneNumber,
+            oldPassword,
+            newPassword);
+        SetCustomAuthorizationHeader(JwtProvider.Generate(_mainUser, _userRole));
+
+        // Act
+        var response = await Client.PutAsJsonAsync("users/update", request);
+        
+        // Assert
+        response.IsSuccessStatusCode.Should().BeTrue();
+        var responseUser = await response.ToResponseModel<UserDto>();
+        
+        // Retrieve the user from the database
+        var dbUser = await Context.Users.FirstOrDefaultAsync(x => x.Id == responseUser.Id);
+        dbUser.Should().NotBeNull();
+        dbUser!.PhoneNumber.Should().Be(phoneNumber);
+        UserManager.PasswordHasher.VerifyHashedPassword(dbUser, dbUser.PasswordHash!, newPassword)
+            .Should().Be(PasswordVerificationResult.Success);
+    }
+    
+    [Fact]
+    public async Task ShouldNotUpdateUserBecausePasswordIsWrong()
+    {
+        // Arrange
+        const string phoneNumber = "+38 012-345-6789";
+        var oldPassword = "Wrong" +TestPassword;
+        var newPassword = "Updated" + TestPassword;
+        var request = new UserUpdateDto(
+            phoneNumber,
+            oldPassword,
+            newPassword);
+        
+        // Act
+        var response = await Client.PutAsJsonAsync("users/update", request);
+        
+        // Assert
+        response.IsSuccessStatusCode.Should().BeFalse();
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
     
     public async Task InitializeAsync()
     {
@@ -424,12 +567,14 @@ public class UsersControllerTests: BaseIntegrationTest, IAsyncLifetime
         await Context.Courses.AddAsync(_mainCourse);
         await Context.CourseCategories.AddAsync(_mainCourseCategory);
         await Context.Registers.AddAsync(_mainRegister);
+        await Context.Feedbacks.AddAsync(_mainFeedback);
         await SaveChangesAsync();
     }
-
+    
     public async Task DisposeAsync()
     {
         Context.Registers.RemoveRange(Context.Registers);
+        Context.Feedbacks.RemoveRange(Context.Feedbacks);
         Context.CourseCategories.RemoveRange(Context.CourseCategories);
         Context.Courses.RemoveRange(Context.Courses);
         Context.Categories.RemoveRange(Context.Categories);

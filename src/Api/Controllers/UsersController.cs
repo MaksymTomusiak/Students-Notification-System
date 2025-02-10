@@ -1,5 +1,6 @@
 ﻿using Api.Dtos;
 using Api.Modules.Errors;
+using Application.Common.Interfaces.Queries;
 using Application.Users.Commands;
 using Domain.Users;
 using MediatR;
@@ -11,7 +12,7 @@ namespace Api.Controllers;
 
 [Route("users")]
 [ApiController]
-public class UsersController(UserManager<User> userManager, ISender sender) : ControllerBase
+public class UsersController(UserManager<User> userManager, ISender sender, IRegisterQueries registerQueries) : ControllerBase
 {
     [Authorize(Roles = "Admin")]
     [HttpGet]
@@ -100,5 +101,58 @@ public class UsersController(UserManager<User> userManager, ISender sender) : Co
         return result.Match<ActionResult<RegisterDto>>(
             r => RegisterDto.FromDomainModel(r),
             e => e.ToObjectResult());
+    }
+    
+    [Authorize]
+    [HttpPost("add-feedback")]
+    public async Task<ActionResult<FeedbackDto>> AddFeedback([FromBody] FeedbackCreateDto request)
+    {
+        var command = new CreateUserFeedbackCommand()
+        {
+            CourseId = request.CourseId,
+            Rating = request.Rating,
+            Content = request.Content
+        };
+        var result = await sender.Send(command);
+        return result.Match<ActionResult<FeedbackDto>>(
+            r => FeedbackDto.FromDomainModel(r),
+            e => e.ToObjectResult());
+    }
+    
+    [Authorize(Roles = "Admin")]
+    [HttpDelete("delete-user-feedback/{feedbackId:guid}")]
+    public async Task<ActionResult<FeedbackDto>> AddFeedback([FromRoute] Guid feedbackId)
+    {
+        var command = new DeleteUserFeedbackCommand
+        {
+            FeedbackId = feedbackId
+        };
+        var result = await sender.Send(command);
+        return result.Match<ActionResult<FeedbackDto>>(
+            r => FeedbackDto.FromDomainModel(r),
+            e => e.ToObjectResult());
+    }
+    
+    [Authorize]
+    [HttpPut("update")]
+    public async Task<ActionResult<UserDto>> Update([FromBody] UserUpdateDto request)
+    {
+        var command = new UpdateUserCommand
+        {
+            PhoneNumber = request.PhoneNumber,
+            OldPassword = request.OldPassword,
+            NewPassword = request.NewPassword
+        };
+        var result = await sender.Send(command);
+        return result.Match<ActionResult<UserDto>>(
+            u => UserDto.FromDomainModel(u),
+            e => e.ToObjectResult());
+    }
+    
+    [HttpGet("user-registers/{userId:guid}")]
+    public async Task<ActionResult<IReadOnlyList<RegisterDto>>> GetUserRegisters([FromRoute] Guid userId, CancellationToken cancellationToken)
+    {
+        var result = await registerQueries.GetByUser(userId, cancellationToken);
+        return result.Select(RegisterDto.FromDomainModel).ToList();
     }
 }

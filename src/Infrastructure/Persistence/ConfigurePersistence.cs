@@ -59,7 +59,7 @@ public static class ConfigurePersistence
         services.AddScoped<ICourseCategoryQueries>(provider => provider.GetRequiredService<CourseCategoryRepository>());
         
         services.AddScoped<FeedbackRepository>();
-        services.AddScoped<FeedbackRepository>(provider => provider.GetRequiredService<FeedbackRepository>());
+        services.AddScoped<IFeedbackRepository>(provider => provider.GetRequiredService<FeedbackRepository>());
         services.AddScoped<IFeedbackQueries>(provider => provider.GetRequiredService<FeedbackRepository>());
         
         services.AddScoped<RegisterRepository>();

@@ -12,7 +12,10 @@ public class UserNotFoundException(Guid id)
 public class UserIdNotFoundException() 
     : UserException(Guid.Empty, $"User id not found!");
 
-public class RegisteredCourseNotFoundException() 
+public class UserFeedbackNotFoundException() 
+    : UserException(Guid.Empty, $"User feedback not found!");
+
+public class RegisterCourseNotFoundException() 
     : UserException(Guid.Empty, $"Course to register not found!");
 
 public class UserNotRegisteredException(Guid id)
@@ -24,6 +27,8 @@ public class RegisteredAlreadyFinishedException()
 public class UserAlreadyRegisteredException(Guid id) 
     : UserException(id, $"User under id: {id} is already registered on this course!");
 
+public class UserAlreadyLeftFeedbackException(Guid id) 
+    : UserException(id, $"User under id: {id} is already left feedback for this course!");
 
 public class UserWithNameAlreadyExistsException(Guid id) 
     : UserException(id, $"User under such user name already exists!");

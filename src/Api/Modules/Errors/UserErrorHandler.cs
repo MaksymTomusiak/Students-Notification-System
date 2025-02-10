@@ -13,13 +13,15 @@ public static class UserErrorHandler
             {
                 UserNotFoundException 
                     or UserIdNotFoundException
-                        or RegisteredCourseNotFoundException => StatusCodes.Status404NotFound,
+                        or RegisterCourseNotFoundException
+                            or UserFeedbackNotFoundException => StatusCodes.Status404NotFound,
                 InvalidCredentialsException => StatusCodes.Status401Unauthorized,
                 UserWithNameAlreadyExistsException 
                     or UserWithEmailAlreadyExistsException
                         or RegisteredAlreadyFinishedException
                             or UserAlreadyRegisteredException
-                                or UserNotRegisteredException => StatusCodes.Status409Conflict,
+                                or UserNotRegisteredException
+                                    or UserAlreadyLeftFeedbackException=> StatusCodes.Status409Conflict,
                 UserUnknownException => StatusCodes.Status500InternalServerError,
                 UserUnauthorizedAccessException => StatusCodes.Status401Unauthorized,
                 _ => throw new NotImplementedException("User error handler is not implemented")

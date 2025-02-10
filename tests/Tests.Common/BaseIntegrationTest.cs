@@ -94,22 +94,3 @@ public abstract class BaseIntegrationTest : IClassFixture<IntegrationTestWebFact
         return result;
     }
 }
-
-public class TestAuthHandler(
-    IOptionsMonitor<AuthenticationSchemeOptions> options,
-    ILoggerFactory logger,
-    UrlEncoder encoder)
-    : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
-{
-    protected override Task<AuthenticateResult> HandleAuthenticateAsync()
-    {
-        var claims = new[] { new Claim(ClaimTypes.Role, "Admin"), new Claim("userId", "admin") };
-        var identity = new ClaimsIdentity(claims, "Test");
-        var principal = new ClaimsPrincipal(identity);
-        var ticket = new AuthenticationTicket(principal, "TestScheme");
-
-        var result = AuthenticateResult.Success(ticket);
-
-        return Task.FromResult(result);
-    }
-}

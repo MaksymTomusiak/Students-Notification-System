@@ -61,7 +61,7 @@ public class EnrollUserInCourseCommandHandler(
                     });
                 
             },
-            () => Task.FromResult<Either<UserException, Register>>(new RegisteredCourseNotFoundException()));
+            () => Task.FromResult<Either<UserException, Register>>(new RegisterCourseNotFoundException()));
     }
 
     private async Task<Either<UserException, Register>> EnrollUser(CourseId courseId, Guid userId, CancellationToken cancellationToken)

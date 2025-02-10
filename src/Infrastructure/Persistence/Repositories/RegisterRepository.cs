@@ -30,7 +30,9 @@ public class RegisterRepository(ApplicationDbContext context) : IRegisterReposit
         return await context.Registers
             .AsNoTracking()
             .Where(x => x.UserId == userId)
+            .Include(x => x.Course)
             .OrderByDescending(x => x.RegisteredAt)
+            .AsSplitQuery()
             .ToListAsync(cancellationToken);
     }
 
