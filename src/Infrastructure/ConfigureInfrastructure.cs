@@ -1,4 +1,5 @@
 ﻿using Infrastructure.Persistence;
+using Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,5 +11,6 @@ public static class ConfigureInfrastructure
     {
         services.AddPersistence(configuration);
         services.AddJwt(configuration);
+        services.AddServices(configuration);
     }
 }
