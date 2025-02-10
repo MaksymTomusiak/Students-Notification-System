@@ -1,0 +1,79 @@
+﻿using Api.Dtos;
+using Api.Modules.Errors;
+using Application.Common.Interfaces.Queries;
+using Application.CourseBans.Commands;
+using Domain.CourseBans;
+using Domain.Courses;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Api.Controllers;
+
+[Authorize(Roles = "Admin")]
+[Route("bans")]
+[ApiController]
+public class CourseBansController(ISender sender, ICourseBanQueries courseBanQueries) : ControllerBase
+{
+    [HttpGet]
+    public async Task<ActionResult<IReadOnlyList<CourseBanDto>>> GetAll(CancellationToken cancellationToken)
+    {
+        var entities = await courseBanQueries.GetAll(cancellationToken);
+        return entities.Select(CourseBanDto.FromDomainModel).ToList();
+    }
+    
+    [HttpGet("by-user/{userId:guid}")]
+    public async Task<ActionResult<IReadOnlyList<CourseBanDto>>> GetUserBans(Guid userId, CancellationToken cancellationToken)
+    {
+        var entities = await courseBanQueries.GetByUser(userId, cancellationToken);
+        return entities.Select(CourseBanDto.FromDomainModel).ToList();
+    }
+    
+    [HttpGet("by-course/{courseId:guid}")]
+    public async Task<ActionResult<IReadOnlyList<CourseBanDto>>> GetCourseBans(Guid courseId, CancellationToken cancellationToken)
+    {
+        var entities = await courseBanQueries.GetByCourse(new CourseId(courseId), cancellationToken);
+        return entities.Select(CourseBanDto.FromDomainModel).ToList();
+    }
+    
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<CourseBanDto>> GetById([FromRoute] Guid id,
+        CancellationToken cancellationToken)
+    {
+        var entity = await courseBanQueries.GetById(new CourseBanId(id), cancellationToken);
+        return entity.Match<ActionResult<CourseBanDto>>(
+            c => CourseBanDto.FromDomainModel(c),
+            () => NotFound());
+    }
+    
+    [HttpPost("add")]
+    public async Task<ActionResult<CourseBanDto>> Create(
+        [FromBody] BanDto request,
+        CancellationToken cancellationToken)
+    {
+        var input = new BanUserFromCourseCommand
+        {
+            UserId = request.UserId,
+            CourseId = request.CourseId,
+            Reason = request.Reason
+        };
+        var result = await sender.Send(input, cancellationToken);
+        return result.Match<ActionResult<CourseBanDto>>(
+            cb => CourseBanDto.FromDomainModel(cb),
+            e => e.ToObjectResult());
+    }
+    
+    [HttpDelete("delete")]
+    public async Task<ActionResult<CourseBanDto>> Delete([FromBody] UnbanDto request, CancellationToken cancellationToken)
+    {
+        var input = new UnbanUserFromCourseCommand
+        {
+            UserId = request.UserId,
+            CourseId = request.CourseId
+        };
+        var result = await sender.Send(input, cancellationToken);
+        return result.Match<ActionResult<CourseBanDto>>(
+            cb => CourseBanDto.FromDomainModel(cb),
+            e => e.ToObjectResult());
+    }
+}

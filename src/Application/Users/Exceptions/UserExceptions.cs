@@ -18,6 +18,7 @@ public class UserFeedbackNotFoundException()
 public class RegisterCourseNotFoundException() 
     : UserException(Guid.Empty, $"Course to register not found!");
 
+
 public class UserNotRegisteredException(Guid id)
     : UserException(id, $"User under id: {id} is not registered on this course!");
 
@@ -26,6 +27,9 @@ public class RegisteredAlreadyFinishedException()
 
 public class UserAlreadyRegisteredException(Guid id) 
     : UserException(id, $"User under id: {id} is already registered on this course!");
+
+public class UserBannedException(Guid id) 
+    : UserException(id, $"User under id: {id} is banned from this course!");
 
 public class UserAlreadyLeftFeedbackException(Guid id) 
     : UserException(id, $"User under id: {id} is already left feedback for this course!");

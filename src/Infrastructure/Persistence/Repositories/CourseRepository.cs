@@ -49,6 +49,9 @@ public class CourseRepository(ApplicationDbContext context) : ICourseRepository,
         return await context.Courses
             .AsNoTracking()
             .Where(c => upcomingDates.Contains(c.StartDate.Date))
+            .Include(x => x.Registers)
+            .ThenInclude(x => x.User)
+            .AsSplitQuery()
             .ToListAsync(cancellationToken);
     }
 

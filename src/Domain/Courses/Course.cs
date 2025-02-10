@@ -1,4 +1,5 @@
 ﻿using Domain.Categories;
+using Domain.CourseBans;
 using Domain.CourseCategories;
 using Domain.Feedbacks;
 using Domain.Registers;
@@ -19,6 +20,7 @@ public class Course
     public ICollection<CourseCategory> CourseCategories { get; set; } = new List<CourseCategory>();
     public ICollection<Register> Registers { get; set; } = new List<Register>();
     public ICollection<Feedback> Feedbacks { get; set; } = new List<Feedback>();
+    public ICollection<CourseBan> CourseBans { get; set; } = new List<CourseBan>();
     private Course(CourseId id, string name, string imageUrl, string description, Guid creatorId, DateTime startDate, DateTime finishDate)
     {
         Id = id;

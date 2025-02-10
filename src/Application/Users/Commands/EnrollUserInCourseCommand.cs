@@ -22,7 +22,8 @@ public class EnrollUserInCourseCommandHandler(
     IHttpContextAccessor httpContextAccessor,
     ICourseQueries courseQueries,
     IRegisterQueries registerQueries,
-    IRegisterRepository registerRepository) : IRequestHandler<EnrollUserInCourseCommand, Either<UserException, Register>>
+    IRegisterRepository registerRepository,
+    ICourseBanQueries courseBanQueries) : IRequestHandler<EnrollUserInCourseCommand, Either<UserException, Register>>
 {
     public async Task<Either<UserException, Register>> Handle(EnrollUserInCourseCommand request, CancellationToken cancellationToken)
     {
@@ -53,11 +54,22 @@ public class EnrollUserInCourseCommandHandler(
                         new UserAlreadyRegisteredException(sessionUser.Id)),
                     async () =>
                     {
-                        if (ec.FinishDate < DateTime.Now)
-                        {
-                            return new RegisteredAlreadyFinishedException();
-                        }
-                        return await EnrollUser(courseId, sessionUser.Id, cancellationToken);
+                        var existingCourseBan = await courseBanQueries.GetByCourseAndUser(courseId, sessionUser.Id, cancellationToken);
+
+                        return await existingCourseBan.Match(
+                            cb => Task.FromResult<Either<UserException, Register>>(
+                                new UserBannedException(sessionUser.Id)),
+                            async () =>
+                            {
+                                if (ec.FinishDate < DateTime.Now)
+                                {
+                                    return new RegisteredAlreadyFinishedException();
+                                }
+                                return await EnrollUser(courseId, sessionUser.Id, cancellationToken);
+                            }
+                        );
+                        
+                        
                     });
                 
             },
