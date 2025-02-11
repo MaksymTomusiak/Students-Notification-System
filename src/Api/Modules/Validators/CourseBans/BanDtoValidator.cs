@@ -3,9 +3,9 @@ using FluentValidation;
 
 namespace Api.Modules.Validators.CourseBans;
 
-public class UserBanDtoValidator : AbstractValidator<BanDto>
+public class BanDtoValidator : AbstractValidator<BanDto>
 {
-    public UserBanDtoValidator()
+    public BanDtoValidator()
     {
         RuleFor(x => x.UserId).NotEmpty();
         RuleFor(x => x.CourseId).NotEmpty();

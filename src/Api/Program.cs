@@ -11,6 +11,7 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
 // Configure application services
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddControllers();
@@ -47,20 +48,24 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowOrigin");
 app.UseHttpsRedirection();
 
-app.UseHangfireDashboard();
+var isTesting = builder.Configuration.GetValue<bool>("IsTesting");
+
+if (!isTesting)
+{
+    app.UseHangfireDashboard();
+
+    RecurringJob.AddOrUpdate<CourseNotificationService>(
+        "schedule-course-notifications",
+        service => service.ScheduleCourseNotifications(),
+        Cron.Daily
+    );
+}
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 await app.InitializeDb();
 app.MapControllers();
-
-// Schedule Hangfire job
-RecurringJob.AddOrUpdate<CourseNotificationService>(
-    "schedule-course-notifications",
-    service => service.ScheduleCourseNotifications(),
-    Cron.Daily
-);
 
 app.Run();
 

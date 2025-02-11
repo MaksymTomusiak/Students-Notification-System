@@ -17,6 +17,12 @@
     </ItemGroup>
 
     <ItemGroup>
+        <None Update="appsettings.Test.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
+    <ItemGroup>
       <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
     </ItemGroup>
 

@@ -47,7 +47,14 @@ public class DeleteUserCommandHandler(
             return new UserUnauthorizedAccessException("Admins cannot delete other admin accounts.");
         }
 
-        var result = await userManager.DeleteAsync(userToDelete);
-        return !result.Succeeded ? "Could not delete user" : "User account deleted successfully.";
+        try
+        {
+            var result = await userManager.DeleteAsync(userToDelete);
+            return !result.Succeeded ? "Could not delete user" : "User account deleted successfully.";
+        }
+        catch (Exception ex)
+        {
+            return new UserUnknownException(userToDelete.Id, ex);
+        }
     }
 }

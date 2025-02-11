@@ -23,12 +23,15 @@ public class IntegrationTestWebFactory : WebApplicationFactory<Program>, IAsyncL
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.ConfigureTestServices(services => { RegisterDatabase(services); }).ConfigureAppConfiguration(
-            (_, config) =>
-            {
-                config.AddJsonFile("appsettings.Test.json")
-                    .AddEnvironmentVariables();
-            });
+        builder.UseEnvironment("Test");
+        
+        builder.ConfigureAppConfiguration((_, config) =>
+        {
+            config.AddJsonFile("appsettings.Test.json", optional: false, reloadOnChange: true)
+                .AddEnvironmentVariables();
+        });
+
+        builder.ConfigureTestServices(RegisterDatabase);
     }
 
     private void RegisterDatabase(IServiceCollection services)

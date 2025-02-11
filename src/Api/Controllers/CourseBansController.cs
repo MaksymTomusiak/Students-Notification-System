@@ -63,13 +63,12 @@ public class CourseBansController(ISender sender, ICourseBanQueries courseBanQue
             e => e.ToObjectResult());
     }
     
-    [HttpDelete("delete")]
-    public async Task<ActionResult<CourseBanDto>> Delete([FromBody] UnbanDto request, CancellationToken cancellationToken)
+    [HttpDelete("delete/{id:guid}")]
+    public async Task<ActionResult<CourseBanDto>> Delete([FromRoute] Guid id, CancellationToken cancellationToken)
     {
         var input = new UnbanUserFromCourseCommand
         {
-            UserId = request.UserId,
-            CourseId = request.CourseId
+            BanId = id
         };
         var result = await sender.Send(input, cancellationToken);
         return result.Match<ActionResult<CourseBanDto>>(

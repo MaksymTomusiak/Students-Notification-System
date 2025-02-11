@@ -17,7 +17,3 @@ public record BanDto(
     Guid UserId,
     Guid CourseId,
     string Reason);
-    
-public record UnbanDto(
-    Guid UserId,
-    Guid CourseId);

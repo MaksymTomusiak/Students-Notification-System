@@ -6,7 +6,6 @@ public class UnbanUserFromCourseCommandValidator : AbstractValidator<UnbanUserFr
 {
     public UnbanUserFromCourseCommandValidator()
     {
-        RuleFor(x => x.UserId).NotEmpty();
-        RuleFor(x => x.CourseId).NotEmpty();
+        RuleFor(x => x.BanId).NotEmpty();
     }
 }

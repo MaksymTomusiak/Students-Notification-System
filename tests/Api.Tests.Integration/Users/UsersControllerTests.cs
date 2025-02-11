@@ -28,8 +28,10 @@ public class UsersControllerTests: BaseIntegrationTest, IAsyncLifetime
     private readonly Role _userRole = RolesData.UserRole;
     private readonly Role _adminRole = RolesData.AdminRole;
     private readonly Course _mainCourse;
+    private readonly Course _secondaryCourse;
     private readonly CourseCategory _mainCourseCategory;
     private readonly Register _mainRegister;
+    private readonly Register _secondaryRegister;
     private readonly Feedback _mainFeedback;
     private const string TestPassword = "TestPass123!";
     
@@ -39,8 +41,10 @@ public class UsersControllerTests: BaseIntegrationTest, IAsyncLifetime
         _secondaryUser = UsersData.SecondaryUser();
         _testAdminUser = UsersData.AdminUser();
         _mainCourse = CoursesData.MainCourse(_mainUser.Id);
+        _secondaryCourse = CoursesData.SecondaryCourse(_mainUser.Id);
         _mainCourseCategory = CourseCategoriesData.New(_mainCourse.Id, _mainCategory.Id);
         _mainRegister = RegistersData.New(_testAdminUser.Id, _mainCourse.Id);
+        _secondaryRegister = RegistersData.New(_secondaryUser.Id, _mainCourse.Id);
         _mainFeedback = FeedbacksData.New(_mainUser.Id, _mainCourse.Id);
     }
 
@@ -313,7 +317,7 @@ public class UsersControllerTests: BaseIntegrationTest, IAsyncLifetime
     public async Task ShouldEnrollUserOnCourse()
     {
         // Arrange
-        var courseId = _mainCourse.Id;
+        var courseId = _secondaryCourse.Id;
         SetCustomAuthorizationHeader(JwtProvider.Generate(_secondaryUser, _userRole));
 
         // Act
@@ -564,9 +568,9 @@ public class UsersControllerTests: BaseIntegrationTest, IAsyncLifetime
         await UserManager.AddToRoleAsync(_secondaryUser, _userRole.Name!);
         await UserManager.AddToRoleAsync(_testAdminUser, _adminRole.Name!);
         await Context.Categories.AddRangeAsync(_mainCategory, _secondaryCategory);
-        await Context.Courses.AddAsync(_mainCourse);
+        await Context.Courses.AddRangeAsync(_mainCourse, _secondaryCourse);
         await Context.CourseCategories.AddAsync(_mainCourseCategory);
-        await Context.Registers.AddAsync(_mainRegister);
+        await Context.Registers.AddRangeAsync(_mainRegister, _secondaryRegister);
         await Context.Feedbacks.AddAsync(_mainFeedback);
         await SaveChangesAsync();
     }
