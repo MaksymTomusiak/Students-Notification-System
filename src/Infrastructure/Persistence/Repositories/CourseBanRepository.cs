@@ -30,6 +30,7 @@ public class CourseBanRepository(ApplicationDbContext context) : ICourseBanRepos
         return await context.CourseBans
             .AsNoTracking()
             .Where(x => x.UserId == userId)
+            .Include(x => x.Course)
             .ToListAsync(cancellationToken);
     }
 

@@ -8,7 +8,8 @@ public record FeedbackDto(
     Guid CourseId,
     DateTime CreatedAt,
     string Content,
-    ushort Rating)
+    ushort Rating,
+    UserDto? User = null)
 {
     public static FeedbackDto FromDomainModel(Feedback feedback) => new(
         feedback.Id.Value,
@@ -16,7 +17,8 @@ public record FeedbackDto(
         feedback.CourseId.Value,
         feedback.CreatedAt,
         feedback.Content,
-        feedback.Rating);
+        feedback.Rating,
+        feedback.User == null ? null : UserDto.FromDomainModel(feedback.User));
 }
 
 public record FeedbackCreateDto(

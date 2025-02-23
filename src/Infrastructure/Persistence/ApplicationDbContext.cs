@@ -2,7 +2,9 @@
 using Domain.Categories;
 using Domain.CourseBans;
 using Domain.CourseCategories;
+using Domain.CourseChapters;
 using Domain.Courses;
+using Domain.CourseSubChapters;
 using Domain.Feedbacks;
 using Domain.Registers;
 using Domain.Roles;
@@ -20,6 +22,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Feedback> Feedbacks { get; set; }
     public DbSet<CourseCategory> CourseCategories { get; set; }
     public DbSet<CourseBan> CourseBans { get; set; }
+    public DbSet<CourseChapter> Chapters { get; set; }
+    public DbSet<CourseSubChapter> SubChapters { get; set; }
     
     protected override void OnModelCreating(ModelBuilder builder)
     {

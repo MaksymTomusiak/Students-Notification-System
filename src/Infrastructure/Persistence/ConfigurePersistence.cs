@@ -69,5 +69,13 @@ public static class ConfigurePersistence
         services.AddScoped<CourseBanRepository>();
         services.AddScoped<ICourseBanRepository>(provider => provider.GetRequiredService<CourseBanRepository>());
         services.AddScoped<ICourseBanQueries>(provider => provider.GetRequiredService<CourseBanRepository>());
+
+        services.AddScoped<CourseChapterRepository>();
+        services.AddScoped<ICourseChapterRepository>(provider => provider.GetRequiredService<CourseChapterRepository>());
+        services.AddScoped<ICourseChapterQueries>(provider => provider.GetRequiredService<CourseChapterRepository>());
+        
+        services.AddScoped<CourseSubChapterRepository>();
+        services.AddScoped<ICourseSubChapterRepository>(provider => provider.GetRequiredService<CourseSubChapterRepository>());
+        services.AddScoped<ICourseSubChapterQueries>(provider => provider.GetRequiredService<CourseSubChapterRepository>());
     }
 }

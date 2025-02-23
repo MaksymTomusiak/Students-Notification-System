@@ -10,6 +10,8 @@ public record CourseDto(
     Guid CreatorId,
     DateTime StartDate,
     DateTime FinishDate,
+    string Language,
+    string Requirements,
     IEnumerable<CategoryDto> Categories)
 {
     public static CourseDto FromDomainModel(Course course)
@@ -20,6 +22,8 @@ public record CourseDto(
             course.CreatorId,
             course.StartDate,
             course.FinishDate,
+            course.Language,
+            course.Requirements,
             course.CourseCategories.Where(x => x.Category != null)
                 .Select(x => CategoryDto.FromDomainModel(x.Category!)));
 }
@@ -31,6 +35,8 @@ public record CourseCreateDto(
     Guid CreatorId,
     DateTime StartDate,
     DateTime FinishDate,
+    string Language,
+    string Requirements,
     IEnumerable<Guid> CategoriesIds);
     
 public record CourseUpdateDto(
@@ -40,4 +46,6 @@ public record CourseUpdateDto(
     string Description,
     DateTime StartDate,
     DateTime FinishDate,
-    IEnumerable<Guid> CategoriesIds);
+    string Language,
+    string Requirements,
+    IEnumerable<Guid>? CategoriesIds);

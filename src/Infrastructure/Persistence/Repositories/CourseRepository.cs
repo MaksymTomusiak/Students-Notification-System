@@ -13,6 +13,8 @@ public class CourseRepository(ApplicationDbContext context) : ICourseRepository,
     {
         return await context.Courses
             .AsNoTracking()
+            .Include(x => x.CourseCategories)
+            .ThenInclude(x => x.Category)
             .ToListAsync(cancellationToken);
     }
 
@@ -60,6 +62,9 @@ public class CourseRepository(ApplicationDbContext context) : ICourseRepository,
         var entity = await context.Courses
             .AsNoTracking()
             .Include(x => x.Creator)
+            .Include(x => x.CourseCategories)
+            .ThenInclude(x => x.Category)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
         
         return entity == null ? Option<Course>.None: Option<Course>.Some(entity);
@@ -85,6 +90,10 @@ public class CourseRepository(ApplicationDbContext context) : ICourseRepository,
 
     public async Task<Course> Update(Course course, CancellationToken cancellationToken)
     {
+        context.Attach(course);
+        
+        context.Entry(course).State = EntityState.Modified;
+        
         context.Courses.Update(course);
         
         await context.SaveChangesAsync(cancellationToken);

@@ -51,6 +51,8 @@ public class CoursesController(ISender sender, ICourseQueries courseQueries) : C
             FinishDate = request.FinishDate,
             CreatorId = request.CreatorId,
             ImageUrl = request.ImageUrl,
+            Language = request.Language,
+            Requirements = request.Requirements,
             CategoriesIds = request.CategoriesIds.ToList()
         };
         var result = await sender.Send(input, cancellationToken);
@@ -72,7 +74,9 @@ public class CoursesController(ISender sender, ICourseQueries courseQueries) : C
             StartDate = request.StartDate,
             FinishDate = request.FinishDate,
             ImageUrl = request.ImageUrl,
-            CategoriesIds = request.CategoriesIds.ToList()
+            Language = request.Language,
+            Requirements = request.Requirements,
+            CategoriesIds = request.CategoriesIds == null ? [] : request.CategoriesIds.ToList()
         };
         var result = await sender.Send(input, cancellationToken);
         return result.Match<ActionResult<CourseDto>>(

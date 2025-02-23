@@ -100,6 +100,75 @@ namespace Infrastructure.Persistence.Migrations
                     b.ToTable("course_categories", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.CourseChapters.CourseChapter", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CourseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("course_id");
+
+                    b.Property<long>("EstimatedLearningTimeMinutes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("estimated_learning_time_minutes");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("name");
+
+                    b.Property<long>("Number")
+                        .HasColumnType("bigint")
+                        .HasColumnName("number");
+
+                    b.HasKey("Id")
+                        .HasName("pk_chapters");
+
+                    b.HasIndex("CourseId")
+                        .HasDatabaseName("ix_chapters_course_id");
+
+                    b.ToTable("chapters", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.CourseSubChapters.CourseSubChapter", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("varchar(2000)")
+                        .HasColumnName("content");
+
+                    b.Property<Guid>("CourseChapterId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("course_chapter_id");
+
+                    b.Property<long>("EstimatedLearningTimeMinutes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("estimated_learning_time_minutes");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("name");
+
+                    b.Property<long>("Number")
+                        .HasColumnType("bigint")
+                        .HasColumnName("number");
+
+                    b.HasKey("Id")
+                        .HasName("pk_sub_chapters");
+
+                    b.HasIndex("CourseChapterId")
+                        .HasDatabaseName("ix_sub_chapters_course_chapter_id");
+
+                    b.ToTable("sub_chapters", (string)null);
+                });
+
             modelBuilder.Entity("Domain.Courses.Course", b =>
                 {
                     b.Property<Guid>("Id")
@@ -124,10 +193,20 @@ namespace Infrastructure.Persistence.Migrations
                         .HasColumnType("varchar(300)")
                         .HasColumnName("image_url");
 
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("language");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("varchar(255)")
                         .HasColumnName("name");
+
+                    b.Property<string>("Requirements")
+                        .IsRequired()
+                        .HasColumnType("varchar(2000)")
+                        .HasColumnName("requirements");
 
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("timestamp with time zone")
@@ -519,6 +598,30 @@ namespace Infrastructure.Persistence.Migrations
                     b.Navigation("Course");
                 });
 
+            modelBuilder.Entity("Domain.CourseChapters.CourseChapter", b =>
+                {
+                    b.HasOne("Domain.Courses.Course", "Course")
+                        .WithMany("Chapters")
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_chapters_courses_course_id");
+
+                    b.Navigation("Course");
+                });
+
+            modelBuilder.Entity("Domain.CourseSubChapters.CourseSubChapter", b =>
+                {
+                    b.HasOne("Domain.CourseChapters.CourseChapter", "CourseChapter")
+                        .WithMany("SubChapters")
+                        .HasForeignKey("CourseChapterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_sub_chapters_chapters_course_chapter_id");
+
+                    b.Navigation("CourseChapter");
+                });
+
             modelBuilder.Entity("Domain.Courses.Course", b =>
                 {
                     b.HasOne("Domain.Users.User", "Creator")
@@ -652,8 +755,15 @@ namespace Infrastructure.Persistence.Migrations
                     b.Navigation("CourseCategories");
                 });
 
+            modelBuilder.Entity("Domain.CourseChapters.CourseChapter", b =>
+                {
+                    b.Navigation("SubChapters");
+                });
+
             modelBuilder.Entity("Domain.Courses.Course", b =>
                 {
+                    b.Navigation("Chapters");
+
                     b.Navigation("CourseBans");
 
                     b.Navigation("CourseCategories");

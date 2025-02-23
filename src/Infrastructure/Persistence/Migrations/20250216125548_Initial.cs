@@ -179,7 +179,9 @@ namespace Infrastructure.Persistence.Migrations
                     description = table.Column<string>(type: "varchar(2000)", nullable: false),
                     creator_id = table.Column<Guid>(type: "uuid", nullable: false),
                     start_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    finish_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    finish_date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    language = table.Column<string>(type: "varchar(255)", nullable: false),
+                    requirements = table.Column<string>(type: "varchar(2000)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -190,6 +192,79 @@ namespace Infrastructure.Persistence.Migrations
                         principalTable: "AspNetUsers",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "identity_user_role_guid_user",
+                columns: table => new
+                {
+                    user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    user_roles_user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    user_roles_role_id = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_identity_user_role_guid_user", x => new { x.user_id, x.user_roles_user_id, x.user_roles_role_id });
+                    table.ForeignKey(
+                        name: "fk_identity_user_role_guid_user_user_roles_user_roles_user_id_",
+                        columns: x => new { x.user_roles_user_id, x.user_roles_role_id },
+                        principalTable: "AspNetUserRoles",
+                        principalColumns: new[] { "user_id", "role_id" },
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "fk_identity_user_role_guid_user_users_user_id",
+                        column: x => x.user_id,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "chapters",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    course_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    name = table.Column<string>(type: "varchar(255)", nullable: false),
+                    estimated_learning_time_minutes = table.Column<long>(type: "bigint", nullable: false),
+                    number = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_chapters", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_chapters_courses_course_id",
+                        column: x => x.course_id,
+                        principalTable: "courses",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "course_bans",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    course_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    reason = table.Column<string>(type: "varchar(255)", nullable: false),
+                    banned_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_course_bans", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_course_bans_courses_course_id",
+                        column: x => x.course_id,
+                        principalTable: "courses",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "fk_course_bans_users_user_id",
+                        column: x => x.user_id,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -271,6 +346,28 @@ namespace Infrastructure.Persistence.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "sub_chapters",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    course_chapter_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    name = table.Column<string>(type: "varchar(255)", nullable: false),
+                    content = table.Column<string>(type: "varchar(2000)", nullable: false),
+                    estimated_learning_time_minutes = table.Column<long>(type: "bigint", nullable: false),
+                    number = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_sub_chapters", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_sub_chapters_chapters_course_chapter_id",
+                        column: x => x.course_chapter_id,
+                        principalTable: "chapters",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "ix_asp_net_role_claims_role_id",
                 table: "AspNetRoleClaims",
@@ -309,6 +406,21 @@ namespace Infrastructure.Persistence.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "ix_chapters_course_id",
+                table: "chapters",
+                column: "course_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_course_bans_course_id",
+                table: "course_bans",
+                column: "course_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_course_bans_user_id",
+                table: "course_bans",
+                column: "user_id");
+
+            migrationBuilder.CreateIndex(
                 name: "ix_course_categories_category_id",
                 table: "course_categories",
                 column: "category_id");
@@ -334,6 +446,11 @@ namespace Infrastructure.Persistence.Migrations
                 column: "user_id");
 
             migrationBuilder.CreateIndex(
+                name: "ix_identity_user_role_guid_user_user_roles_user_id_user_roles_",
+                table: "identity_user_role_guid_user",
+                columns: new[] { "user_roles_user_id", "user_roles_role_id" });
+
+            migrationBuilder.CreateIndex(
                 name: "ix_registers_course_id",
                 table: "registers",
                 column: "course_id");
@@ -342,6 +459,11 @@ namespace Infrastructure.Persistence.Migrations
                 name: "ix_registers_user_id",
                 table: "registers",
                 column: "user_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_sub_chapters_course_chapter_id",
+                table: "sub_chapters",
+                column: "course_chapter_id");
         }
 
         /// <inheritdoc />
@@ -357,10 +479,10 @@ namespace Infrastructure.Persistence.Migrations
                 name: "AspNetUserLogins");
 
             migrationBuilder.DropTable(
-                name: "AspNetUserRoles");
+                name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
-                name: "AspNetUserTokens");
+                name: "course_bans");
 
             migrationBuilder.DropTable(
                 name: "course_categories");
@@ -369,13 +491,25 @@ namespace Infrastructure.Persistence.Migrations
                 name: "feedbacks");
 
             migrationBuilder.DropTable(
+                name: "identity_user_role_guid_user");
+
+            migrationBuilder.DropTable(
                 name: "registers");
 
             migrationBuilder.DropTable(
-                name: "AspNetRoles");
+                name: "sub_chapters");
 
             migrationBuilder.DropTable(
                 name: "categories");
+
+            migrationBuilder.DropTable(
+                name: "AspNetUserRoles");
+
+            migrationBuilder.DropTable(
+                name: "chapters");
+
+            migrationBuilder.DropTable(
+                name: "AspNetRoles");
 
             migrationBuilder.DropTable(
                 name: "courses");

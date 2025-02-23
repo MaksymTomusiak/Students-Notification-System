@@ -8,12 +8,14 @@ public record UserDto(
     Guid Id,
     string UserName,
     string Email,
+    string PhoneNumber,
     IList<string>? Roles)
 {
     public static UserDto FromDomainModel(User user, IList<string>? roles = null)
         => new(user.Id,
             user.UserName, 
             user.Email, 
+            user.PhoneNumber,
             roles ?? []);
 
 }

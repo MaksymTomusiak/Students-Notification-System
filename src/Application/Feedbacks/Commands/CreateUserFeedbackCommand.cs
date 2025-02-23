@@ -1,20 +1,19 @@
-﻿
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Application.Common.Interfaces.Queries;
 using Application.Common.Interfaces.Repositories;
+using Application.Feedbacks.Exceptions;
 using Application.Users.Exceptions;
 using Domain.Courses;
 using Domain.Feedbacks;
-using Domain.Registers;
 using Domain.Users;
 using LanguageExt;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 
-namespace Application.Users.Commands;
+namespace Application.Feedbacks.Commands;
 
-public record CreateUserFeedbackCommand : IRequest<Either<UserException, Feedback>>
+public record CreateUserFeedbackCommand : IRequest<Either<FeedbackException, Feedback>>
 {
     public required Guid CourseId { get; init; }
     public required ushort Rating { get; init; }
@@ -27,20 +26,20 @@ public class CreateUserFeedbackCommandHandler(
     IFeedbackQueries feedbackQueries,
     ICourseQueries courseQueries,
     UserManager<User> userManager,
-    IRegisterQueries registerQueries) : IRequestHandler<CreateUserFeedbackCommand, Either<UserException, Feedback>>
+    IRegisterQueries registerQueries) : IRequestHandler<CreateUserFeedbackCommand, Either<FeedbackException, Feedback>>
 {
-    public async Task<Either<UserException, Feedback>> Handle(CreateUserFeedbackCommand request, CancellationToken cancellationToken)
+    public async Task<Either<FeedbackException, Feedback>> Handle(CreateUserFeedbackCommand request, CancellationToken cancellationToken)
     {
         var sessionUserId = httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(sessionUserId))
         {
-            return new UserIdNotFoundException();
+            return new FeedbackUserIdNotFoundException();
         }
 
         var sessionUser = await userManager.FindByIdAsync(sessionUserId);
         if (sessionUser == null)
         {
-            return new UserNotFoundException(new Guid(sessionUserId));
+            return new FeedbackUserNotFoundException();
         }
 
         var courseId = new CourseId(request.CourseId);
@@ -58,8 +57,8 @@ public class CreateUserFeedbackCommandHandler(
                         var existingFeedback = await feedbackQueries.GetByCourseAndUser(courseId, sessionUser.Id, cancellationToken);
 
                         return await existingFeedback.Match(
-                            f => Task.FromResult<Either<UserException, Feedback>>(
-                                new UserAlreadyLeftFeedbackException(sessionUser.Id)),
+                            f => Task.FromResult<Either<FeedbackException, Feedback>>(
+                                new FeedbackAlreadyExistsException(f.Id.Value)),
                             async () => await CreateFeedback(
                                 courseId,
                                 sessionUser.Id,
@@ -67,13 +66,13 @@ public class CreateUserFeedbackCommandHandler(
                                 request.Content,
                                 cancellationToken));
                     },
-                    () => Task.FromResult<Either<UserException, Feedback>>(
-                        new UserNotRegisteredException(sessionUser.Id)));
+                    () => Task.FromResult<Either<FeedbackException, Feedback>>(
+                        new FeedbackWithoutRegistrationException(sessionUser.Id)));
             },
-            () => Task.FromResult<Either<UserException, Feedback>>(new RegisterCourseNotFoundException()));
+            () => Task.FromResult<Either<FeedbackException, Feedback>>(new FeedbackCourseNotFoundException()));
     }
 
-    private async Task<Either<UserException, Feedback>> CreateFeedback(CourseId courseId, Guid sessionUserId, ushort requestRating, string requestContent, CancellationToken cancellationToken)
+    private async Task<Either<FeedbackException, Feedback>> CreateFeedback(CourseId courseId, Guid sessionUserId, ushort requestRating, string requestContent, CancellationToken cancellationToken)
     {
         try
         {
@@ -83,7 +82,7 @@ public class CreateUserFeedbackCommandHandler(
         }
         catch (Exception ex)
         {
-            return new UserUnknownException(sessionUserId, ex);
+            return new FeedbackUnknownException(Guid.Empty, ex);
         }
     }
 }

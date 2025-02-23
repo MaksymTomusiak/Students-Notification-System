@@ -19,6 +19,8 @@ public record UpdateCourseCommand : IRequest<Either<CourseException, Course>>
     public required string Description { get; init; }
     public required DateTime StartDate { get; init; }
     public required DateTime FinishDate { get; init; }
+    public required string Language { get; init; }
+    public required string Requirements { get; init; }
     public required IReadOnlyList<Guid> CategoriesIds { get; init; }
 }
 
@@ -38,7 +40,7 @@ public class UpdateCourseCommandHandler(
         return await existingCourse.Match(
             async ec =>
             {
-                var duplicatedCourse = await CheckDuplicates(ec, cancellationToken);
+                var duplicatedCourse = await CheckDuplicates(ec, request.Name, cancellationToken);
                 
                 return await duplicatedCourse.Match(
                     e => Task.FromResult<Either<CourseException, Course>>(new CourseAlreadyExistsException(e.Id)),
@@ -48,6 +50,8 @@ public class UpdateCourseCommandHandler(
                         request.Description,
                         request.StartDate,
                         request.FinishDate,
+                        request.Language,
+                        request.Requirements,
                         request.CategoriesIds,
                         cancellationToken));
             },
@@ -61,6 +65,8 @@ public class UpdateCourseCommandHandler(
         string description,
         DateTime startDate,
         DateTime finishDate,
+        string language,
+        string requirements,
         IReadOnlyList<Guid> newCategoriesIds,
         CancellationToken cancellationToken)
     {
@@ -79,8 +85,6 @@ public class UpdateCourseCommandHandler(
                     return new CourseCategoryNotFoundException(CourseId.Empty());
                 }
             }
-            
-            entity.UpdateDetails(name, description, imageUrl, startDate, finishDate);
             
             var oldCategories = (await courseCategoryQueries.GetByCourse(entity.Id, cancellationToken))
                 .Select(x => x.CategoryId)
@@ -124,17 +128,23 @@ public class UpdateCourseCommandHandler(
                 await courseCategoryRepository.Add(CourseCategory.New(CourseCategoryId.New(), entity.Id, categoryId), cancellationToken);
             }
             
-            return await courseRepository.Update(entity, cancellationToken);
+            entity.UpdateDetails(name, description, imageUrl, startDate, finishDate, language, requirements);
+            await courseRepository.Update(entity, cancellationToken);
+            
+            var result = await courseQueries.GetById(entity.Id, cancellationToken);
+            return result.Match<Either<CourseException, Course>>(
+                ec => ec,
+                () => new CourseNotFoundException(entity.Id));
         }
         catch (Exception exception)
         {
-            return new CourseUnknownException(CourseId.Empty(), exception);
+            return new CourseUnknownException(entity.Id, exception);
         }
     }
 
-    private async Task<Option<Course>> CheckDuplicates(Course entity, CancellationToken cancellationToken)
+    private async Task<Option<Course>> CheckDuplicates(Course entity, string name, CancellationToken cancellationToken)
     {
-        var existingCourse = await courseQueries.SearchByName(entity.Name, cancellationToken);
+        var existingCourse = await courseQueries.SearchByName(name, cancellationToken);
         
         return existingCourse.Match(
             ec => ec.Id == entity.Id ? Option<Course>.None : Option<Course>.Some(ec),

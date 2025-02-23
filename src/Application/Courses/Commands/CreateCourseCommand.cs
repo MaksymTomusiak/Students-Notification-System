@@ -19,6 +19,8 @@ public record CreateCourseCommand : IRequest<Either<CourseException, Course>>
     public required DateTime StartDate { get; init; }
     public required DateTime FinishDate { get; init; }
     public required Guid CreatorId { get; init; }
+    public required string Language { get; init; }
+    public required string Requirements { get; init; }
     public required IReadOnlyList<Guid> CategoriesIds { get; init; }
 }
 
@@ -47,7 +49,9 @@ public class CreateCourseCommandHandler(
             request.Description,
             existingCreator.Id,
             request.StartDate,
-            request.FinishDate);
+            request.FinishDate,
+            request.Language,
+            request.Requirements);
 
         var existingCourse = await courseQueries.SearchByName(request.Name, cancellationToken);
 
@@ -82,14 +86,17 @@ public class CreateCourseCommandHandler(
                     return new CourseCategoryNotFoundException(CourseId.Empty());
                 }
             }
-            var result = await courseRepository.Add(entity, cancellationToken);
+            await courseRepository.Add(entity, cancellationToken);
 
             foreach (var courseCategory in courseCategories)
             {
                 await courseCategoryRepository.Add(courseCategory, cancellationToken);
             }
             
-            return result;
+            var result = await courseQueries.GetById(entity.Id, cancellationToken);
+            return result.Match<Either<CourseException, Course>>(
+                ec => ec,
+                () => new CourseNotFoundException(entity.Id));
         }
         catch (Exception exception)
         {

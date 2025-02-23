@@ -13,6 +13,7 @@ public class FeedbackRepository(ApplicationDbContext context) : IFeedbackReposit
     {
         return await context.Feedbacks
             .AsNoTracking()
+            .Include(x => x.User)
             .ToListAsync(cancellationToken);
     }
 
@@ -22,6 +23,7 @@ public class FeedbackRepository(ApplicationDbContext context) : IFeedbackReposit
             .AsNoTracking()
             .Where(x => x.CourseId == courseId)
             .OrderByDescending(x => x.CreatedAt)
+            .Include(x => x.User)
             .ToListAsync(cancellationToken);
     }
 

@@ -25,6 +25,7 @@ public class JwtProvider : IJwtProvider
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim("role", role.Name),
+            new Claim("name", user.UserName)
         };
         var signingCredentials = new SigningCredentials(
             new SymmetricSecurityKey(

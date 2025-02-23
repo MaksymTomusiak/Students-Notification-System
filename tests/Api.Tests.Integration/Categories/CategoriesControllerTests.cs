@@ -154,7 +154,6 @@ public class CategoriesControllerTests : BaseIntegrationTest, IAsyncLifetime
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    //ToDo: Test category delete if has courses
     [Fact]
     public async Task ShouldNotDeleteCategoryBecauseCategoryHasCourses()
     {

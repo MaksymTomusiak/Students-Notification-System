@@ -1,6 +1,6 @@
 ﻿using FluentValidation;
 
-namespace Application.Users.Commands;
+namespace Application.Feedbacks.Commands;
 
 public class CreateUserFeedbackCommandValidator : AbstractValidator<CreateUserFeedbackCommand>
 {

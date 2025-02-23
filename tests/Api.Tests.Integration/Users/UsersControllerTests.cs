@@ -2,11 +2,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using Api.Dtos;
-using Application.Users.Commands;
 using Domain.Categories;
 using Domain.CourseCategories;
 using Domain.Courses;
-using Domain.Feedbacks;
 using Domain.Registers;
 using Domain.Roles;
 using Domain.Users;
@@ -32,7 +30,6 @@ public class UsersControllerTests: BaseIntegrationTest, IAsyncLifetime
     private readonly CourseCategory _mainCourseCategory;
     private readonly Register _mainRegister;
     private readonly Register _secondaryRegister;
-    private readonly Feedback _mainFeedback;
     private const string TestPassword = "TestPass123!";
     
     public UsersControllerTests(IntegrationTestWebFactory factory) : base(factory)
@@ -45,7 +42,6 @@ public class UsersControllerTests: BaseIntegrationTest, IAsyncLifetime
         _mainCourseCategory = CourseCategoriesData.New(_mainCourse.Id, _mainCategory.Id);
         _mainRegister = RegistersData.New(_testAdminUser.Id, _mainCourse.Id);
         _secondaryRegister = RegistersData.New(_secondaryUser.Id, _mainCourse.Id);
-        _mainFeedback = FeedbacksData.New(_mainUser.Id, _mainCourse.Id);
     }
 
     [Fact]
@@ -416,100 +412,6 @@ public class UsersControllerTests: BaseIntegrationTest, IAsyncLifetime
     }
     
     [Fact]
-    public async Task ShouldCreateFeedbackOnCourse()
-    {
-        // Arrange
-        var courseId = _mainCourse.Id;
-        var content = "Test content";
-        ushort rating = 3;
-        var request = new FeedbackCreateDto(courseId.Value, content, rating);
-        
-        SetCustomAuthorizationHeader(JwtProvider.Generate(_secondaryUser, _userRole));
-
-        // Act
-        var response = await Client.PostAsJsonAsync("users/add-feedback", request);
-        
-        // Assert
-        response.IsSuccessStatusCode.Should().BeTrue();
-        var responseFeedback = await response.ToResponseModel<FeedbackDto>();
-        var feedbackId = new FeedbackId(responseFeedback.Id);
-        
-        // Retrieve the register from the database
-        var dbFeedback = await Context.Feedbacks.FirstOrDefaultAsync(x => x.Id == feedbackId);
-        dbFeedback.Should().NotBeNull();
-        dbFeedback!.UserId.Should().Be(_secondaryUser.Id);
-        dbFeedback.CourseId.Should().Be(courseId);
-        dbFeedback.Content.Should().Be(content);
-        dbFeedback.Rating.Should().Be(rating);
-    }
-    
-    [Fact]
-    public async Task ShouldNotCreateFeedbackOnCourseBecauseCourseNotFound()
-    {
-        // Arrange
-        var courseId = Guid.NewGuid();
-        var content = "Test content";
-        ushort rating = 3;
-        var request = new FeedbackCreateDto(courseId, content, rating);
-        
-        SetCustomAuthorizationHeader(JwtProvider.Generate(_secondaryUser, _userRole));
-
-        // Act
-        var response = await Client.PostAsJsonAsync("users/add-feedback", request);
-        
-        // Assert
-        response.IsSuccessStatusCode.Should().BeFalse();
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-    }
-    
-    [Fact]
-    public async Task ShouldNotCreateFeedbackOnCourseBecauseUserAlreadyHasOne()
-    {
-        // Arrange
-        var courseId = _mainCourse.Id.Value;
-        var content = "Test content";
-        ushort rating = 3;
-        var request = new FeedbackCreateDto(courseId, content, rating);
-        SetCustomAuthorizationHeader(JwtProvider.Generate(_mainUser, _userRole));
-
-        // Act
-        var response = await Client.PostAsJsonAsync("users/add-feedback", request);
-        
-        // Assert
-        response.IsSuccessStatusCode.Should().BeFalse();
-        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
-    }
-    
-    [Fact]
-    public async Task ShouldDeleteFeedbackOnCourse()
-    {
-        // Arrange
-        var feedbackId = _mainFeedback.Id;
-
-        // Act
-        var response = await Client.DeleteAsync($"users/delete-user-feedback/{feedbackId}");
-        
-        // Assert
-        response.IsSuccessStatusCode.Should().BeTrue();
-        var dbFeedback = await Context.Feedbacks.FirstOrDefaultAsync(x => x.Id == feedbackId);
-        dbFeedback.Should().BeNull();
-    }
-    
-    [Fact]
-    public async Task ShouldDeleteFeedbackOnCourseBecauseFeedbackNotFound()
-    {
-        // Arrange
-        var feedbackId = Guid.NewGuid();
-
-        // Act
-        var response = await Client.DeleteAsync($"users/delete-feedback/{feedbackId}");
-        
-        // Assert
-        response.IsSuccessStatusCode.Should().BeFalse();
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-    }
-    
-    [Fact]
     public async Task ShouldUpdateUser()
     {
         // Arrange
@@ -571,14 +473,12 @@ public class UsersControllerTests: BaseIntegrationTest, IAsyncLifetime
         await Context.Courses.AddRangeAsync(_mainCourse, _secondaryCourse);
         await Context.CourseCategories.AddAsync(_mainCourseCategory);
         await Context.Registers.AddRangeAsync(_mainRegister, _secondaryRegister);
-        await Context.Feedbacks.AddAsync(_mainFeedback);
         await SaveChangesAsync();
     }
     
     public async Task DisposeAsync()
     {
         Context.Registers.RemoveRange(Context.Registers);
-        Context.Feedbacks.RemoveRange(Context.Feedbacks);
         Context.CourseCategories.RemoveRange(Context.CourseCategories);
         Context.Courses.RemoveRange(Context.Courses);
         Context.Categories.RemoveRange(Context.Categories);

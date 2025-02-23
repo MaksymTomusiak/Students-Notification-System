@@ -45,6 +45,8 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
         var finishDate = DateTime.UtcNow + TimeSpan.FromHours(10);
         var creatorId = _mainUser.Id;
         var categoryId = _mainCategory.Id;
+        const string language = "English";
+        const string requirements = "Test requirements";
         var request = new MultipartFormDataContent
         {
             { new StringContent(courseName), "Name" },
@@ -53,7 +55,9 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
             { new StringContent(startDate.ToString("o")), "StartDate" },
             { new StringContent(finishDate.ToString("o")), "FinishDate" },
             { new StringContent(creatorId.ToString()), "CreatorId" },
-            { new StringContent(categoryId.Value.ToString()), "CategoriesIds" }
+            { new StringContent(categoryId.Value.ToString()), "CategoriesIds" },
+            { new StringContent(language), "Language" },
+            { new StringContent(requirements), "Requirements" },
         };
         
         // Act
@@ -72,6 +76,8 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
         dbCourse.Description.Should().Be(courseDescription);
         dbCourse.StartDate.Should().BeSameDateAs(startDate);
         dbCourse.FinishDate.Should().BeSameDateAs(finishDate);
+        dbCourse.Language.Should().Be(language);
+        dbCourse.Requirements.Should().Be(requirements);
         dbCourse.CreatorId.Should().Be(creatorId);
         
         var dbCourseCategory = await Context.CourseCategories.FirstOrDefaultAsync(x => x.CourseId == courseId && x.CategoryId == categoryId);
@@ -90,6 +96,8 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
         var finishDate = DateTime.UtcNow + TimeSpan.FromHours(10);
         var creatorId = _mainUser.Id;
         var categoryId = _mainCategory.Id;
+        const string language = "English";
+        const string requirements = "Test requirements";
         var request = new MultipartFormDataContent
         {
             { new StringContent(courseName), "Name" },
@@ -98,7 +106,9 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
             { new StringContent(startDate.ToString("o")), "StartDate" },
             { new StringContent(finishDate.ToString("o")), "FinishDate" },
             { new StringContent(creatorId.ToString()), "CreatorId" },
-            { new StringContent(categoryId.Value.ToString()), "CategoriesIds" }
+            { new StringContent(categoryId.Value.ToString()), "CategoriesIds" },
+            { new StringContent(language), "Language" },
+            { new StringContent(requirements), "Requirements" },
         };
         
         // Act
@@ -120,6 +130,8 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
         var finishDate = DateTime.UtcNow + TimeSpan.FromHours(10);
         var creatorId = Guid.NewGuid();
         var categoryId = _mainCategory.Id;
+        const string language = "English";
+        const string requirements = "Test requirements";
         var request = new MultipartFormDataContent
         {
             { new StringContent(courseName), "Name" },
@@ -128,7 +140,9 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
             { new StringContent(startDate.ToString("o")), "StartDate" },
             { new StringContent(finishDate.ToString("o")), "FinishDate" },
             { new StringContent(creatorId.ToString()), "CreatorId" },
-            { new StringContent(categoryId.Value.ToString()), "CategoriesIds" }
+            { new StringContent(categoryId.Value.ToString()), "CategoriesIds" },
+            { new StringContent(language), "Language" },
+            { new StringContent(requirements), "Requirements" },
         };
         // Act
         var response = await Client.PostAsync("courses/add", request);
@@ -149,6 +163,8 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
         var finishDate = DateTime.UtcNow + TimeSpan.FromHours(10);
         var creatorId = _mainUser.Id;
         var categoryId = Guid.NewGuid();
+        const string language = "English";
+        const string requirements = "Test requirements";
         var request = new MultipartFormDataContent
         {
             { new StringContent(courseName), "Name" },
@@ -157,7 +173,9 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
             { new StringContent(startDate.ToString("o")), "StartDate" },
             { new StringContent(finishDate.ToString("o")), "FinishDate" },
             { new StringContent(creatorId.ToString()), "CreatorId" },
-            { new StringContent(categoryId.ToString()), "CategoriesIds" }
+            { new StringContent(categoryId.ToString()), "CategoriesIds" },
+            { new StringContent(language), "Language" },
+            { new StringContent(requirements), "Requirements" },
         };
 
         // Act
@@ -180,6 +198,8 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
         var finishDate = DateTime.UtcNow + TimeSpan.FromHours(10);
         var creatorId = _mainUser.Id;
         var categoryId = _secondaryCategory.Id;
+        const string language = "English updated";
+        const string requirements = "Test requirements updated";
         var request = new MultipartFormDataContent
         {
             { new StringContent(requestCourseId.Value.ToString()), "Id" },
@@ -189,7 +209,9 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
             { new StringContent(startDate.ToString("o")), "StartDate" },
             { new StringContent(finishDate.ToString("o")), "FinishDate" },
             { new StringContent(creatorId.ToString()), "CreatorId" },
-            { new StringContent(categoryId.Value.ToString()), "CategoriesIds" }
+            { new StringContent(categoryId.Value.ToString()), "CategoriesIds" },
+            { new StringContent(language), "Language" },
+            { new StringContent(requirements), "Requirements" },
         };
 
         // Act
@@ -210,6 +232,8 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
         dbCourse.StartDate.Should().BeSameDateAs(startDate);
         dbCourse.FinishDate.Should().BeSameDateAs(finishDate);
         dbCourse.CreatorId.Should().Be(creatorId);
+        dbCourse.Language.Should().Be(language);
+        dbCourse.Requirements.Should().Be(requirements);
         
         var dbCourseCategory = await Context.CourseCategories.FirstOrDefaultAsync(x => x.CourseId == responseCourseId && x.CategoryId == categoryId);
         dbCourseCategory.Should().NotBeNull();
@@ -227,6 +251,8 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
         var finishDate = DateTime.UtcNow + TimeSpan.FromHours(10);
         var creatorId = _mainUser.Id;
         var categoryId = _mainCategory.Id;
+        const string language = "English updated";
+        const string requirements = "Test requirements updated";
         var request = new MultipartFormDataContent
         {
             { new StringContent(requestCourseId.ToString()), "Id" },
@@ -236,7 +262,9 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
             { new StringContent(startDate.ToString("o")), "StartDate" },
             { new StringContent(finishDate.ToString("o")), "FinishDate" },
             { new StringContent(creatorId.ToString()), "CreatorId" },
-            { new StringContent(categoryId.Value.ToString()), "CategoriesIds" }
+            { new StringContent(categoryId.Value.ToString()), "CategoriesIds" },
+            { new StringContent(language), "Language" },
+            { new StringContent(requirements), "Requirements" },
         };
 
         // Act
@@ -259,6 +287,8 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
         var finishDate = DateTime.UtcNow + TimeSpan.FromHours(10);
         var creatorId = _mainUser.Id;
         var categoryId = Guid.NewGuid();
+        const string language = "English updated";
+        const string requirements = "Test requirements updated";
         var request = new MultipartFormDataContent
         {
             { new StringContent(requestCourseId.Value.ToString()), "Id" },
@@ -268,7 +298,9 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
             { new StringContent(startDate.ToString("o")), "StartDate" },
             { new StringContent(finishDate.ToString("o")), "FinishDate" },
             { new StringContent(creatorId.ToString()), "CreatorId" },
-            { new StringContent(categoryId.ToString()), "CategoriesIds" }
+            { new StringContent(categoryId.ToString()), "CategoriesIds" },
+            { new StringContent(language), "Language" },
+            { new StringContent(requirements), "Requirements" },
         };
 
         // Act

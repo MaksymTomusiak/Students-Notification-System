@@ -1,9 +1,8 @@
 ﻿using System.Security.Claims;
-using System.Text.Unicode;
 using Application.Common.Interfaces.Queries;
 using Application.Common.Interfaces.Repositories;
+using Application.Feedbacks.Exceptions;
 using Application.Users.Exceptions;
-using Domain.Courses;
 using Domain.Feedbacks;
 using Domain.Users;
 using LanguageExt;
@@ -11,9 +10,9 @@ using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 
-namespace Application.Users.Commands;
+namespace Application.Feedbacks.Commands;
 
-public record DeleteUserFeedbackCommand : IRequest<Either<UserException, Feedback>>
+public record DeleteUserFeedbackCommand : IRequest<Either<FeedbackException, Feedback>>
 {
     public required Guid FeedbackId { get; init; }
 }
@@ -22,31 +21,31 @@ public class DeleteUserFeedbackCommandHandler(
     IHttpContextAccessor httpContextAccessor,
     IFeedbackRepository feedbackRepository,
     IFeedbackQueries feedbackQueries,
-    UserManager<User> userManager) : IRequestHandler<DeleteUserFeedbackCommand, Either<UserException, Feedback>>
+    UserManager<User> userManager) : IRequestHandler<DeleteUserFeedbackCommand, Either<FeedbackException, Feedback>>
 {
-    public async Task<Either<UserException, Feedback>> Handle(DeleteUserFeedbackCommand request,
+    public async Task<Either<FeedbackException, Feedback>> Handle(DeleteUserFeedbackCommand request,
         CancellationToken cancellationToken)
     {
         var sessionUserId = httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(sessionUserId))
         {
-            return new UserIdNotFoundException();
+            return new FeedbackUserIdNotFoundException();
         }
 
         var sessionUser = await userManager.FindByIdAsync(sessionUserId);
         if (sessionUser == null)
         {
-            return new UserNotFoundException(new Guid(sessionUserId));
+            return new FeedbackUserNotFoundException();
         }
 
         var existingFeedback = await feedbackQueries.GetById(new FeedbackId(request.FeedbackId), cancellationToken);
 
         return await existingFeedback.Match(
             async f => await DeleteFeedback(f, sessionUser.Id, cancellationToken),
-            () => Task.FromResult<Either<UserException, Feedback>>(new UserFeedbackNotFoundException()));
+            () => Task.FromResult<Either<FeedbackException, Feedback>>(new FeedbackNotFoundException(request.FeedbackId)));
     }
 
-    private async Task<Either<UserException, Feedback>> DeleteFeedback(Feedback feedback, Guid sessionUserId, CancellationToken cancellationToken)
+    private async Task<Either<FeedbackException, Feedback>> DeleteFeedback(Feedback feedback, Guid sessionUserId, CancellationToken cancellationToken)
     {
         try
         {
@@ -54,7 +53,7 @@ public class DeleteUserFeedbackCommandHandler(
         }
         catch (Exception ex)
         {
-            return new UserUnknownException(sessionUserId, ex);
+            return new FeedbackUnknownException(sessionUserId, ex);
         }
     }
 

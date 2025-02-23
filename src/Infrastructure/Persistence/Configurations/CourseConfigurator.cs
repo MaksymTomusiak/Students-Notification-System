@@ -14,6 +14,10 @@ public class CourseConfigurator : IEntityTypeConfiguration<Course>
         
         builder.Property(x => x.Name).IsRequired()
             .HasColumnType("varchar(255)");
+        builder.Property(x => x.Language).IsRequired()
+            .HasColumnType("varchar(255)");
+        builder.Property(x => x.Requirements).IsRequired()
+            .HasColumnType("varchar(2000)");
         builder.Property(x => x.Description).IsRequired()
             .HasColumnType("varchar(2000)");
         builder.Property(x => x.ImageUrl).IsRequired()

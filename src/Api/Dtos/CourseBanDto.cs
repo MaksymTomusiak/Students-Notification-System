@@ -7,10 +7,17 @@ public record CourseBanDto(
     Guid UserId,
     Guid CourseId,
     DateTime BannedAt,
-    string Reason)
+    string Reason,
+    CourseDto? Course = null)
 {
     public static CourseBanDto FromDomainModel(CourseBan ban) 
-        => new(ban.Id.Value, ban.UserId, ban.CourseId.Value, ban.BannedAt, ban.Reason);
+        => new(
+            ban.Id.Value,
+            ban.UserId,
+            ban.CourseId.Value,
+            ban.BannedAt,
+            ban.Reason,
+            ban.Course == null ? null : CourseDto.FromDomainModel(ban.Course));
 }
 
 public record BanDto(

@@ -22,7 +22,9 @@ public class BanUserFromCourseCommandHandler(
     ICourseQueries courseQueries,
     UserManager<User> userManager,
     ICourseBanQueries courseBanQueries,
-    ICourseBanRepository courseBanRepository) : IRequestHandler<BanUserFromCourseCommand, Either<CourseBanException, CourseBan>>
+    ICourseBanRepository courseBanRepository,
+    IRegisterRepository registerRepository,
+    IRegisterQueries registerQueries) : IRequestHandler<BanUserFromCourseCommand, Either<CourseBanException, CourseBan>>
 {
     public async Task<Either<CourseBanException, CourseBan>> Handle(BanUserFromCourseCommand request,
         CancellationToken cancellationToken)
@@ -47,10 +49,7 @@ public class BanUserFromCourseCommandHandler(
                 return await existingCourseBan.Match(
                     cb => Task.FromResult<Either<CourseBanException, CourseBan>>(
                         new BanAlreadyExists(request.UserId)),
-                    async () =>
-                    {
-                        return await BanUserFromCourse(courseId, request.UserId, request.Reason, cancellationToken);
-                    });
+                    async () => await BanUserFromCourse(courseId, request.UserId, request.Reason, cancellationToken));
             },
             () => Task.FromResult<Either<CourseBanException, CourseBan>>(new BanCourseNotFoundException()));
     }
@@ -59,6 +58,18 @@ public class BanUserFromCourseCommandHandler(
     {
         try
         {
+            var register = await registerQueries.GetByCourseAndUser(courseId, userId, cancellationToken);
+
+            var registers = await registerQueries.GetAll(cancellationToken);
+            
+            await register.Match(
+                async r =>
+                {
+                    await registerRepository.Delete(r, cancellationToken);
+                    return true;
+                },
+                () => Task.FromResult(false));
+            
             var entity = CourseBan.New(CourseBanId.New(), userId, courseId, reason, DateTime.Now);
             
             var res = await courseBanRepository.Add(entity, cancellationToken);
