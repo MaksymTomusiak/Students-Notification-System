@@ -39,7 +39,6 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
     {
         // Arrange
         const string courseName = "Test course name";
-        const string courseImageUrl = "https://test.com";
         const string courseDescription = "Test course description";
         var startDate = DateTime.UtcNow + TimeSpan.FromHours(1);
         var finishDate = DateTime.UtcNow + TimeSpan.FromHours(10);
@@ -50,7 +49,6 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
         var request = new MultipartFormDataContent
         {
             { new StringContent(courseName), "Name" },
-            { new StringContent(courseImageUrl), "ImageUrl" },
             { new StringContent(courseDescription), "Description" },
             { new StringContent(startDate.ToString("o")), "StartDate" },
             { new StringContent(finishDate.ToString("o")), "FinishDate" },
@@ -72,7 +70,7 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
         var dbCourse = await Context.Courses.FirstAsync(x => x.Id == courseId);
         dbCourse.Should().NotBeNull();
         dbCourse.Name.Should().Be(courseName);
-        dbCourse.ImageUrl.Should().Be(courseImageUrl);
+        dbCourse.ImageUrl.Should().Be(string.Empty);
         dbCourse.Description.Should().Be(courseDescription);
         dbCourse.StartDate.Should().BeSameDateAs(startDate);
         dbCourse.FinishDate.Should().BeSameDateAs(finishDate);
@@ -90,7 +88,6 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
     {
         // Arrange
         var courseName = _mainCourse.Name;
-        const string courseImageUrl = "https://test.com";
         const string courseDescription = "Test course description";
         var startDate = DateTime.UtcNow + TimeSpan.FromHours(1);
         var finishDate = DateTime.UtcNow + TimeSpan.FromHours(10);
@@ -101,7 +98,6 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
         var request = new MultipartFormDataContent
         {
             { new StringContent(courseName), "Name" },
-            { new StringContent(courseImageUrl), "ImageUrl" },
             { new StringContent(courseDescription), "Description" },
             { new StringContent(startDate.ToString("o")), "StartDate" },
             { new StringContent(finishDate.ToString("o")), "FinishDate" },
@@ -124,7 +120,6 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
     {
         // Arrange
         const string courseName = "Test course name";
-        const string courseImageUrl = "https://test.com";
         const string courseDescription = "Test course description";
         var startDate = DateTime.UtcNow + TimeSpan.FromHours(1);
         var finishDate = DateTime.UtcNow + TimeSpan.FromHours(10);
@@ -135,7 +130,6 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
         var request = new MultipartFormDataContent
         {
             { new StringContent(courseName), "Name" },
-            { new StringContent(courseImageUrl), "ImageUrl" },
             { new StringContent(courseDescription), "Description" },
             { new StringContent(startDate.ToString("o")), "StartDate" },
             { new StringContent(finishDate.ToString("o")), "FinishDate" },
@@ -157,7 +151,6 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
     {
         // Arrange
         const string courseName = "Test course name";
-        const string courseImageUrl = "https://test.com";
         const string courseDescription = "Test course description";
         var startDate = DateTime.UtcNow + TimeSpan.FromHours(1);
         var finishDate = DateTime.UtcNow + TimeSpan.FromHours(10);
@@ -168,7 +161,6 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
         var request = new MultipartFormDataContent
         {
             { new StringContent(courseName), "Name" },
-            { new StringContent(courseImageUrl), "ImageUrl" },
             { new StringContent(courseDescription), "Description" },
             { new StringContent(startDate.ToString("o")), "StartDate" },
             { new StringContent(finishDate.ToString("o")), "FinishDate" },
@@ -192,7 +184,6 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
         // Arrange
         var requestCourseId = _mainCourse.Id;
         const string courseName = "Test course name";
-        const string courseImageUrl = "https://test.com";
         const string courseDescription = "Test course description";
         var startDate = DateTime.UtcNow + TimeSpan.FromHours(1);
         var finishDate = DateTime.UtcNow + TimeSpan.FromHours(10);
@@ -204,7 +195,6 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
         {
             { new StringContent(requestCourseId.Value.ToString()), "Id" },
             { new StringContent(courseName), "Name" },
-            { new StringContent(courseImageUrl), "ImageUrl" },
             { new StringContent(courseDescription), "Description" },
             { new StringContent(startDate.ToString("o")), "StartDate" },
             { new StringContent(finishDate.ToString("o")), "FinishDate" },
@@ -227,7 +217,7 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
         var dbCourse = await Context.Courses.FirstAsync(x => x.Id == responseCourseId);
         dbCourse.Should().NotBeNull();
         dbCourse.Name.Should().Be(courseName);
-        dbCourse.ImageUrl.Should().Be(courseImageUrl);
+        dbCourse.ImageUrl.Should().Be(_mainCourse.ImageUrl);
         dbCourse.Description.Should().Be(courseDescription);
         dbCourse.StartDate.Should().BeSameDateAs(startDate);
         dbCourse.FinishDate.Should().BeSameDateAs(finishDate);
@@ -245,7 +235,6 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
         // Arrange
         var requestCourseId = Guid.NewGuid();
         const string courseName = "Test course name";
-        const string courseImageUrl = "https://test.com";
         const string courseDescription = "Test course description";
         var startDate = DateTime.UtcNow + TimeSpan.FromHours(1);
         var finishDate = DateTime.UtcNow + TimeSpan.FromHours(10);
@@ -257,7 +246,6 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
         {
             { new StringContent(requestCourseId.ToString()), "Id" },
             { new StringContent(courseName), "Name" },
-            { new StringContent(courseImageUrl), "ImageUrl" },
             { new StringContent(courseDescription), "Description" },
             { new StringContent(startDate.ToString("o")), "StartDate" },
             { new StringContent(finishDate.ToString("o")), "FinishDate" },
@@ -281,7 +269,6 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
         // Arrange
         var requestCourseId = _mainCourse.Id;
         const string courseName = "Test course name";
-        const string courseImageUrl = "https://test.com";
         const string courseDescription = "Test course description";
         var startDate = DateTime.UtcNow + TimeSpan.FromHours(1);
         var finishDate = DateTime.UtcNow + TimeSpan.FromHours(10);
@@ -293,7 +280,6 @@ public class CoursesControllerTests : BaseIntegrationTest, IAsyncLifetime
         {
             { new StringContent(requestCourseId.Value.ToString()), "Id" },
             { new StringContent(courseName), "Name" },
-            { new StringContent(courseImageUrl), "ImageUrl" },
             { new StringContent(courseDescription), "Description" },
             { new StringContent(startDate.ToString("o")), "StartDate" },
             { new StringContent(finishDate.ToString("o")), "FinishDate" },

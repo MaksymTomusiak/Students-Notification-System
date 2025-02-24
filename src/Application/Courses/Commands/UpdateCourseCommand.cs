@@ -1,5 +1,6 @@
 ﻿using Application.Common.Interfaces.Queries;
 using Application.Common.Interfaces.Repositories;
+using Application.Common.Interfaces.Services;
 using Application.Courses.Exceptions;
 using Domain.Categories;
 using Domain.CourseCategories;
@@ -7,6 +8,7 @@ using Domain.Courses;
 using Domain.Users;
 using LanguageExt;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 
 namespace Application.Courses.Commands;
@@ -15,7 +17,7 @@ public record UpdateCourseCommand : IRequest<Either<CourseException, Course>>
 {
     public required Guid CourseId { get; init; }
     public required string Name { get; init; }
-    public required string ImageUrl { get; init; }
+    public required IFormFile? Image { get; init; }
     public required string Description { get; init; }
     public required DateTime StartDate { get; init; }
     public required DateTime FinishDate { get; init; }
@@ -29,7 +31,8 @@ public class UpdateCourseCommandHandler(
     ICourseQueries courseQueries,
     ICourseCategoryRepository courseCategoryRepository,
     ICourseCategoryQueries courseCategoryQueries,
-    ICategoryQueries categoryQueries) : IRequestHandler<UpdateCourseCommand, Either<CourseException, Course>>
+    ICategoryQueries categoryQueries,
+    IFileStorageService fileStorageService) : IRequestHandler<UpdateCourseCommand, Either<CourseException, Course>>
 {
     public async Task<Either<CourseException, Course>> Handle(
         UpdateCourseCommand request,
@@ -46,7 +49,7 @@ public class UpdateCourseCommandHandler(
                     e => Task.FromResult<Either<CourseException, Course>>(new CourseAlreadyExistsException(e.Id)),
                     async () => await UpdateEntity(ec, 
                         request.Name,
-                        request.ImageUrl,
+                        request.Image,
                         request.Description,
                         request.StartDate,
                         request.FinishDate,
@@ -61,7 +64,7 @@ public class UpdateCourseCommandHandler(
     private async Task<Either<CourseException, Course>> UpdateEntity(
         Course entity,
         string name,
-        string imageUrl,
+        IFormFile? image,
         string description,
         DateTime startDate,
         DateTime finishDate,
@@ -128,7 +131,13 @@ public class UpdateCourseCommandHandler(
                 await courseCategoryRepository.Add(CourseCategory.New(CourseCategoryId.New(), entity.Id, categoryId), cancellationToken);
             }
             
-            entity.UpdateDetails(name, description, imageUrl, startDate, finishDate, language, requirements);
+            entity.UpdateDetails(name, description, entity.ImageUrl, startDate, finishDate, language, requirements);
+            if (image != null)
+            {
+                var imageUrl = await fileStorageService.SaveFileAsync(image, "courses", entity.Id.Value, cancellationToken);
+                entity.SetImageUrl(imageUrl);
+            }
+            
             await courseRepository.Update(entity, cancellationToken);
             
             var result = await courseQueries.GetById(entity.Id, cancellationToken);

@@ -51,4 +51,7 @@ public class Course
         Language = language;
         Requirements = requirements;
     }
+    
+    public void SetImageUrl(string imageUrl) 
+        => ImageUrl = imageUrl;
 }

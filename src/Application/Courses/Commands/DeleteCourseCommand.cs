@@ -1,5 +1,6 @@
 ﻿using Application.Common.Interfaces.Queries;
 using Application.Common.Interfaces.Repositories;
+using Application.Common.Interfaces.Services;
 using Application.Courses.Exceptions;
 using Domain.Courses;
 using LanguageExt;
@@ -14,7 +15,8 @@ public record DeleteCourseCommand : IRequest<Either<CourseException, Course>>
 
 public class DeleteCourseCommandHandler(
     ICourseRepository courseRepository,
-    ICourseQueries courseQueries) : IRequestHandler<DeleteCourseCommand, Either<CourseException, Course>>
+    ICourseQueries courseQueries,
+    IFileStorageService fileStorageService) : IRequestHandler<DeleteCourseCommand, Either<CourseException, Course>>
 {
     public async Task<Either<CourseException, Course>> Handle(
         DeleteCourseCommand request,
@@ -35,6 +37,11 @@ public class DeleteCourseCommandHandler(
         try
         {
             var result =  await courseRepository.Delete(entity, cancellationToken);
+            
+            if (!string.IsNullOrEmpty(entity.ImageUrl))
+            {
+                await fileStorageService.DeleteFileAsync("courses", entity.Id.Value, cancellationToken);   
+            }
             
             return result;
         }

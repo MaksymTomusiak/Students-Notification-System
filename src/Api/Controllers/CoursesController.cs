@@ -50,7 +50,7 @@ public class CoursesController(ISender sender, ICourseQueries courseQueries) : C
             StartDate = request.StartDate,
             FinishDate = request.FinishDate,
             CreatorId = request.CreatorId,
-            ImageUrl = request.ImageUrl,
+            Image = request.Image,
             Language = request.Language,
             Requirements = request.Requirements,
             CategoriesIds = request.CategoriesIds.ToList()
@@ -73,7 +73,7 @@ public class CoursesController(ISender sender, ICourseQueries courseQueries) : C
             Description = request.Description,
             StartDate = request.StartDate,
             FinishDate = request.FinishDate,
-            ImageUrl = request.ImageUrl,
+            Image = request.Image,
             Language = request.Language,
             Requirements = request.Requirements,
             CategoriesIds = request.CategoriesIds == null ? [] : request.CategoriesIds.ToList()

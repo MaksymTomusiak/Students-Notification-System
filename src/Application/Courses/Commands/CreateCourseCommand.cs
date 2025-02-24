@@ -1,5 +1,6 @@
 ﻿using Application.Common.Interfaces.Queries;
 using Application.Common.Interfaces.Repositories;
+using Application.Common.Interfaces.Services;
 using Application.Courses.Exceptions;
 using Domain.Categories;
 using Domain.CourseCategories;
@@ -7,6 +8,7 @@ using Domain.Courses;
 using Domain.Users;
 using LanguageExt;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 
 namespace Application.Courses.Commands;
@@ -14,7 +16,7 @@ namespace Application.Courses.Commands;
 public record CreateCourseCommand : IRequest<Either<CourseException, Course>>
 {
     public required string Name { get; init; }
-    public required string ImageUrl { get; init; }
+    public required IFormFile? Image { get; init; }
     public required string Description { get; init; }
     public required DateTime StartDate { get; init; }
     public required DateTime FinishDate { get; init; }
@@ -29,7 +31,8 @@ public class CreateCourseCommandHandler(
     ICourseQueries courseQueries,
     UserManager<User> userManager,
     ICategoryQueries categoryQueries,
-    ICourseCategoryRepository courseCategoryRepository) 
+    ICourseCategoryRepository courseCategoryRepository,
+    IFileStorageService fileStorageService) 
     : IRequestHandler<CreateCourseCommand, Either<CourseException, Course>>
 {
     public async Task<Either<CourseException, Course>> Handle(
@@ -45,7 +48,7 @@ public class CreateCourseCommandHandler(
 
         var entity = Course.New(CourseId.New(),
             request.Name,
-            request.ImageUrl,
+            "",
             request.Description,
             existingCreator.Id,
             request.StartDate,
@@ -58,11 +61,12 @@ public class CreateCourseCommandHandler(
         return await existingCourse.Match(
             e => Task.FromResult<Either<CourseException, Course>>
                 (new CourseAlreadyExistsException(e.Id)),
-            async () => await SaveEntity(entity, request.CategoriesIds, cancellationToken));
+            async () => await SaveEntity(entity, request.Image, request.CategoriesIds, cancellationToken));
     }
 
     private async Task<Either<CourseException, Course>> SaveEntity(
         Course entity,
+        IFormFile? image,
         IReadOnlyList<Guid> categories,
         CancellationToken cancellationToken)
     {
@@ -86,6 +90,16 @@ public class CreateCourseCommandHandler(
                     return new CourseCategoryNotFoundException(CourseId.Empty());
                 }
             }
+            
+            if (image != null)
+            {
+                var imageUrl = "";
+                imageUrl = await fileStorageService.SaveFileAsync(image, "courses", entity.Id.Value, cancellationToken);
+
+                entity.SetImageUrl(imageUrl);
+            }
+            
+            
             await courseRepository.Add(entity, cancellationToken);
 
             foreach (var courseCategory in courseCategories)

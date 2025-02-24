@@ -101,6 +101,7 @@ public class UsersController(
 
         var email = result.Principal.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress")?.Value;
         var name = result.Principal.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name")?.Value;
+        name = name?.Replace(' ', '_');
         var facebookId = result.Principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
         if (string.IsNullOrEmpty(email) && string.IsNullOrEmpty(facebookId))

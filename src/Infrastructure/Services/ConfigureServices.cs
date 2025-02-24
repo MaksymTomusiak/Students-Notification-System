@@ -1,4 +1,6 @@
-﻿using Application.Common.Interfaces.Services;
+﻿using Amazon.Runtime;
+using Amazon.S3;
+using Application.Common.Interfaces.Services;
 using Hangfire;
 using Hangfire.PostgreSql;
 using Microsoft.Extensions.Configuration;
@@ -23,5 +25,13 @@ public static class ConfigureServices
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<ICourseNotificationService, CourseNotificationService>();
         
+        services.AddSingleton<IFileStorageService, S3FileStorageService>();
+        var awsOptions = configuration.GetAWSOptions();
+        awsOptions.Credentials = new BasicAWSCredentials(
+            configuration["AWS:AccessKeyId"],
+            configuration["AWS:SecretAccessKey"]);
+
+        services.AddDefaultAWSOptions(awsOptions);
+        services.AddAWSService<IAmazonS3>();
     }
 }

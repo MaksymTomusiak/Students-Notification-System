@@ -30,7 +30,7 @@ public record CourseDto(
 
 public record CourseCreateDto(
     string Name,
-    string ImageUrl,
+    IFormFile? Image,
     string Description,
     Guid CreatorId,
     DateTime StartDate,
@@ -42,7 +42,7 @@ public record CourseCreateDto(
 public record CourseUpdateDto(
     Guid Id,
     string Name,
-    string ImageUrl,
+    IFormFile? Image,
     string Description,
     DateTime StartDate,
     DateTime FinishDate,
