@@ -14,11 +14,32 @@ namespace Api.Controllers;
 [ApiController]
 public class CategoriesController(ISender sender, ICategoryQueries categoryQueries) : ControllerBase
 {
+    [HttpGet("paginated")]
+    public async Task<ActionResult<PaginatedResponse<CategoryDto>>> GetAllPaginated(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? search = null, // Add search query parameter
+        CancellationToken cancellationToken = default)
+    {
+        var (items, totalCount, _, _) = await categoryQueries.GetAllPaginated(page, pageSize, search, cancellationToken);
+
+        var paginatedResponse = new PaginatedResponse<CategoryDto>
+        {
+            Items = items.Select(CategoryDto.FromDomainModel).ToList(),
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
+        };
+
+        return Ok(paginatedResponse);
+    }
+    
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<CategoryDto>>> GetAll(CancellationToken cancellationToken)
+    public async Task<IEnumerable<CategoryDto>> GetAllPaginated(CancellationToken cancellationToken)
     {
         var entities = await categoryQueries.GetAll(cancellationToken);
-        return entities.Select(CategoryDto.FromDomainModel).ToList();
+
+        return entities.Select(CategoryDto.FromDomainModel);
     }
 
     [HttpGet("{categoryId:guid}")]

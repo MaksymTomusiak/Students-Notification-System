@@ -26,11 +26,33 @@ public class CourseRepository(ApplicationDbContext context) : ICourseRepository,
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<Course>> GetByCategories(IReadOnlyList<CategoryId> categories, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<Course>> GetPopularCourses(uint limit, CancellationToken cancellationToken)
     {
         return await context.Courses
             .AsNoTracking()
+            .Include(x => x.Registers)
+            .OrderByDescending(x => x.Registers.Count)
+            .Include(x => x.Feedbacks)
+            .Take((int)limit)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Course>> GetByCategories(IReadOnlyList<CategoryId> categories, CancellationToken cancellationToken)
+    {
+        if (categories == null || !categories.Any())
+        {
+            // Return all courses if no categories are provided
+            return await context.Courses
+                .AsNoTracking()
+                .Include(x => x.CourseCategories)
+                .ThenInclude(x => x.Category)
+                .ToListAsync(cancellationToken);
+        }
+
+        return await context.Courses
+            .AsNoTracking()
             .Include(x => x.CourseCategories)
+            .ThenInclude(x => x.Category)
             .Where(x => x.CourseCategories.Any(cc => categories.Contains(cc.CategoryId)))
             .ToListAsync(cancellationToken);
     }
@@ -48,6 +70,12 @@ public class CourseRepository(ApplicationDbContext context) : ICourseRepository,
         var upcomingDates = days
             .Select(d => DateTime.UtcNow.Date.AddDays(d))
             .ToList();
+
+        var dates = context.Courses
+            .AsNoTracking()
+            .Select(c => c.StartDate.Date)
+            .ToList();
+        
         return await context.Courses
             .AsNoTracking()
             .Where(c => upcomingDates.Contains(c.StartDate.Date))
@@ -62,21 +90,32 @@ public class CourseRepository(ApplicationDbContext context) : ICourseRepository,
         var entity = await context.Courses
             .AsNoTracking()
             .Include(x => x.Creator)
+            .Include(x => x.Feedbacks)
+            .Include(x => x.Chapters)
             .Include(x => x.CourseCategories)
             .ThenInclude(x => x.Category)
             .AsSplitQuery()
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
         
-        return entity == null ? Option<Course>.None: Option<Course>.Some(entity);
+        return entity == null ? Option<Course>.None : Option<Course>.Some(entity);
     }
 
     public async Task<Option<Course>> SearchByName(string name, CancellationToken cancellationToken)
     {
         var entity = await context.Courses
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Name ==  name, cancellationToken);
+            .FirstOrDefaultAsync(x => x.Name == name, cancellationToken);
         
         return entity == null ? Option<Course>.None : Option<Course>.Some(entity);
+    }
+
+    public async Task<IReadOnlyList<Course>> Filter(string? search, IEnumerable<CategoryId> categories, CancellationToken cancellationToken)
+    {
+        var entities = await GetByCategories(categories.ToList(), cancellationToken);
+
+        return string.IsNullOrEmpty(search) ?
+            entities :
+            entities.Where(x => x.Name.Contains(search)).ToList();
     }
 
     public async Task<Course> Add(Course course, CancellationToken cancellationToken)

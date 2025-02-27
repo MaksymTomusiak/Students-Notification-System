@@ -12,7 +12,9 @@ public record CourseDto(
     DateTime FinishDate,
     string Language,
     string Requirements,
-    IEnumerable<CategoryDto> Categories)
+    IEnumerable<CategoryDto> Categories,
+    IEnumerable<FeedbackDto> Feedbacks,
+    IEnumerable<CourseChapterDto> Chapters)
 {
     public static CourseDto FromDomainModel(Course course)
         => new(course.Id.Value,
@@ -25,7 +27,11 @@ public record CourseDto(
             course.Language,
             course.Requirements,
             course.CourseCategories.Where(x => x.Category != null)
-                .Select(x => CategoryDto.FromDomainModel(x.Category!)));
+                .Select(x => CategoryDto.FromDomainModel(x.Category!)),
+            course.Feedbacks
+                .Select(FeedbackDto.FromDomainModel),
+            course.Chapters
+                .Select(CourseChapterDto.FromDomainModel));
 }
 
 public record CourseCreateDto(

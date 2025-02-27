@@ -2,6 +2,7 @@
 using Api.Modules.Errors;
 using Application.Common.Interfaces.Queries;
 using Application.Courses.Commands;
+using Domain.Categories;
 using Domain.Courses;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -9,7 +10,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
 
-[Authorize(Roles = "Admin")]
 [Route("courses")]
 [ApiController]
 public class CoursesController(ISender sender, ICourseQueries courseQueries) : ControllerBase
@@ -22,6 +22,14 @@ public class CoursesController(ISender sender, ICourseQueries courseQueries) : C
         return entities.Select(CourseDto.FromDomainModel).ToList();
     }
     
+    [HttpGet("popular/{limit:int}")]
+    public async Task<ActionResult<IReadOnlyList<CourseDto>>> GetPopular(int limit, CancellationToken cancellationToken)
+    {
+        if (limit <= 0) return BadRequest("Limit must be greater than 0");
+        var entities = await courseQueries.GetPopularCourses((uint)limit, cancellationToken);
+        return entities.Select(CourseDto.FromDomainModel).ToList();
+    }
+    
     [HttpGet("{courseId:guid}")]
     public async Task<ActionResult<CourseDto>> GetById([FromRoute] Guid courseId, CancellationToken cancellationToken)
     {
@@ -31,6 +39,19 @@ public class CoursesController(ISender sender, ICourseQueries courseQueries) : C
             () => NotFound());
     }
     
+    [HttpGet("filtered")]
+    public async Task<ActionResult<IReadOnlyList<CourseDto>>> GetFilteredCourses(
+        [FromQuery] string? search = null,
+        [FromQuery] IEnumerable<Guid>? categoryIds = null,
+        CancellationToken cancellationToken = default)
+    {
+        categoryIds ??= new List<Guid>();
+        
+        var entities = await courseQueries.Filter(search, categoryIds.Select(x => new CategoryId(x)), cancellationToken);
+        return entities.Select(CourseDto.FromDomainModel).ToList();
+    }
+    
+    [Authorize(Roles = "Admin")]
     [HttpGet("created-by/{userId:guid}")]
     public async Task<ActionResult<IReadOnlyList<CourseDto>>> GetByCreator([FromRoute] Guid userId, CancellationToken cancellationToken)
     {
@@ -38,6 +59,7 @@ public class CoursesController(ISender sender, ICourseQueries courseQueries) : C
         return entities.Select(CourseDto.FromDomainModel).ToList();
     }
     
+    [Authorize(Roles = "Admin")]
     [HttpPost("add")]
     public async Task<ActionResult<CourseDto>> Create(
         [FromForm] CourseCreateDto request,
@@ -61,6 +83,7 @@ public class CoursesController(ISender sender, ICourseQueries courseQueries) : C
             e => e.ToObjectResult());
     }
     
+    [Authorize(Roles = "Admin")]
     [HttpPut("update")]
     public async Task<ActionResult<CourseDto>> Update(
         [FromForm] CourseUpdateDto request,
@@ -84,6 +107,7 @@ public class CoursesController(ISender sender, ICourseQueries courseQueries) : C
             e => e.ToObjectResult());
     }
     
+    [Authorize(Roles = "Admin")]
     [HttpDelete("delete/{id:guid}")]
     public async Task<ActionResult<CourseDto>> Delete([FromRoute] Guid id, CancellationToken cancellationToken)
     {

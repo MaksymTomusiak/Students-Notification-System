@@ -54,11 +54,23 @@ public class FeedbacksController(
         return result.Select(FeedbackDto.FromDomainModel).ToList();
     }
     
-    [Authorize(Roles = "Admin")]
     [HttpGet("by-course/{courseId:guid}")]
-    public async Task<ActionResult<IReadOnlyList<FeedbackDto>>> GetCourseFeedbacks([FromRoute] Guid courseId, CancellationToken cancellationToken)
+    public async Task<ActionResult<PaginatedResponse<FeedbackDto>>> GetCourseFeedbacks(
+        [FromRoute] Guid courseId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
-        var result = await feedbackQueries.GetByCourse(new CourseId(courseId), cancellationToken);
-        return result.Select(FeedbackDto.FromDomainModel).ToList();
+        var (items, totalCount, _, _) = await feedbackQueries.GetByCourse(new CourseId(courseId), page, pageSize, cancellationToken);
+
+        var paginatedResponse = new PaginatedResponse<FeedbackDto>
+        {
+            Items = items.Select(FeedbackDto.FromDomainModel).ToList(),
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
+        };
+
+        return Ok(paginatedResponse);
     }
 }

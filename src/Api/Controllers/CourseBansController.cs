@@ -23,10 +23,23 @@ public class CourseBansController(ISender sender, ICourseBanQueries courseBanQue
     }
     
     [HttpGet("by-user/{userId:guid}")]
-    public async Task<ActionResult<IReadOnlyList<CourseBanDto>>> GetUserBans(Guid userId, CancellationToken cancellationToken)
+    public async Task<ActionResult<PaginatedResponse<CourseBanDto>>> GetUserBans(
+        [FromRoute] Guid userId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
-        var entities = await courseBanQueries.GetByUser(userId, cancellationToken);
-        return entities.Select(CourseBanDto.FromDomainModel).ToList();
+        var (items, totalCount, _, _) = await courseBanQueries.GetByUserPaginated(userId, page, pageSize, cancellationToken);
+
+        var paginatedResponse = new PaginatedResponse<CourseBanDto>
+        {
+            Items = items.Select(CourseBanDto.FromDomainModel).ToList(),
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
+        };
+
+        return Ok(paginatedResponse);
     }
     
     [HttpGet("by-course/{courseId:guid}")]

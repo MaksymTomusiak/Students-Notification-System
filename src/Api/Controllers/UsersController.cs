@@ -16,7 +16,9 @@ using System.Text;
 using Application.Common.Interfaces;
 using Domain.Roles;
 using Infrastructure.Authentication;
+using LanguageExt;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers;
 
@@ -30,20 +32,45 @@ public class UsersController(
     IJwtProvider jwtProvider)
     : ControllerBase
 {
-    private readonly JwtOptions _jwtOptions = jwtOptions.Value;
-
     [Authorize(Roles = "Admin")]
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<UserDto>>> GetAll(CancellationToken cancellationToken)
+    [HttpGet]
+    public async Task<ActionResult<PaginatedResponse<UserDto>>> GetAll(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? search = null,
+        CancellationToken cancellationToken = default)
     {
-        var entities = userManager.Users.ToList();
+        var query = userManager.Users.AsQueryable();
+
+        if (!string.IsNullOrEmpty(search))
+        {
+            query = query.Where(c => c.UserName.ToLower().Contains(search.ToLower()) || c.Email.ToLower().Contains(search.ToLower()));
+        }
+        
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var entities = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
         var result = new List<UserDto>();
         foreach (var user in entities)
         {
             var roles = await userManager.GetRolesAsync(user);
             result.Add(UserDto.FromDomainModel(user, roles));
         }
-        return result.ToList();
+
+        var paginatedResponse = new PaginatedResponse<UserDto>
+        {
+            Items = result,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
+        };
+
+        return Ok(paginatedResponse);
     }
 
     [HttpPost("login")]
@@ -201,11 +228,22 @@ public class UsersController(
     }
 
     [HttpGet("user-registers/{userId:guid}")]
-    public async Task<ActionResult<IReadOnlyList<RegisterDto>>> GetUserRegisters(
+    public async Task<ActionResult<PaginatedResponse<RegisterDto>>> GetUserRegisters(
         [FromRoute] Guid userId,
-        CancellationToken cancellationToken)
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
-        var result = await registerQueries.GetByUser(userId, cancellationToken);
-        return result.Select(RegisterDto.FromDomainModel).ToList();
+        var (items, totalCount, _, _) = await registerQueries.GetByUserPaginated(userId, page, pageSize, cancellationToken);
+
+        var paginatedResponse = new PaginatedResponse<RegisterDto>
+        {
+            Items = items.Select(RegisterDto.FromDomainModel).ToList(),
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
+        };
+
+        return Ok(paginatedResponse);
     }
 }

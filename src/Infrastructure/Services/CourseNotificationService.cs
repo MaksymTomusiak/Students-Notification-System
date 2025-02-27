@@ -25,20 +25,15 @@ public class CourseNotificationService(
                 {
                     BackgroundJob.Schedule(
                         () => SendEmailNotification(user.Email!, course.Name, daysBefore),
-                        GetNotificationTime(course.StartDate, daysBefore));
+                        course.StartDate.Date.AddDays(-daysBefore).AddHours(9) - DateTime.UtcNow);
                 }
             }
         }
     }
-    private void SendEmailNotification(string email, string courseName, int daysBefore)
+    public void SendEmailNotification(string email, string courseName, int daysBefore)
     {
         var subject = $"Reminder: {courseName} starts in {daysBefore} day(s)";
         var message = $"Hello, your course '{courseName}' starts in {daysBefore} days. Get ready!";
         emailService.SendEmail(email, subject, message);
-    }
-
-    private DateTime GetNotificationTime(DateTime startDate, int daysBefore)
-    {
-        return startDate.Date.AddDays(-daysBefore).AddHours(9); // Notify at 9 AM
     }
 }

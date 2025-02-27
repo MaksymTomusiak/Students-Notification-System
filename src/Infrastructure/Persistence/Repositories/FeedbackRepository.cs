@@ -17,16 +17,26 @@ public class FeedbackRepository(ApplicationDbContext context) : IFeedbackReposit
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<Feedback>> GetByCourse(CourseId courseId, CancellationToken cancellationToken)
+    public async Task<(IReadOnlyList<Feedback> Items, int TotalCount, int Page, int PageSize)> GetByCourse(
+        CourseId courseId, 
+        int page, 
+        int pageSize, 
+        CancellationToken cancellationToken)
     {
-        return await context.Feedbacks
+        var totalCount = await context.Feedbacks
+            .CountAsync(x => x.CourseId == courseId, cancellationToken);
+
+        var items = await context.Feedbacks
             .AsNoTracking()
             .Where(x => x.CourseId == courseId)
-            .OrderByDescending(x => x.CreatedAt)
+            .OrderByDescending(x => x.CreatedAt) // Maintain existing ordering
             .Include(x => x.User)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(cancellationToken);
-    }
 
+        return (items, totalCount, page, pageSize);
+    }
     public async Task<IReadOnlyList<Feedback>> GetByUser(Guid userId, CancellationToken cancellationToken)
     {
         return await context.Feedbacks

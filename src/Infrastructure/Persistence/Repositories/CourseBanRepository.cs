@@ -25,13 +25,25 @@ public class CourseBanRepository(ApplicationDbContext context) : ICourseBanRepos
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<CourseBan>> GetByUser(Guid userId, CancellationToken cancellationToken)
+    public async Task<(IReadOnlyList<CourseBan> Items, int TotalCount, int Page, int PageSize)> GetByUserPaginated(
+        Guid userId, 
+        int page, 
+        int pageSize, 
+        CancellationToken cancellationToken)
     {
-        return await context.CourseBans
+        var totalCount = await context.CourseBans
+            .CountAsync(x => x.UserId == userId, cancellationToken);
+
+        var items = await context.CourseBans
             .AsNoTracking()
             .Where(x => x.UserId == userId)
             .Include(x => x.Course)
+            .OrderByDescending(x => x.BannedAt) 
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(cancellationToken);
+
+        return (items, totalCount, page, pageSize);
     }
 
     public async Task<Option<CourseBan>> GetById(CourseBanId id, CancellationToken cancellationToken)
