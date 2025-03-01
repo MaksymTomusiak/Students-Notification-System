@@ -1,0 +1,64 @@
+﻿@model (string CourseName, int DaysBefore)
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Start Reminder</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background-color: #007bff;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 2px solid #0056b3;
+        }
+        .content {
+            padding: 20px;
+            color: #333;
+            line-height: 1.6;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 10px;
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+        }
+        .highlight {
+            color: #007bff;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>Course Starts Alert!</h1>
+    </div>
+    <div class="content">
+        <p>Hello there!</p>
+        <p>We’re excited to remind you that your course '<span class="highlight">@Model.CourseName</span>' is starting in <span class="highlight">@Model.DaysBefore</span> day(s). Get ready for an amazing learning experience!</p>
+        <p>Stay tuned for more updates, and feel free to reach out if you have any questions.</p>
+    </div>
+    <div class="footer">
+        <p>&copy; 2025 Students notification system. All rights reserved.</p>
+    </div>
+</div>
+</body>
+</html>

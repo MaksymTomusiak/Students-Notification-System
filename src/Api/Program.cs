@@ -1,8 +1,6 @@
 using Api.Modules;
 using Api.OptionsSetup;
 using Application;
-using Application.Common.Interfaces.Repositories;
-using Application.Common.Interfaces.Services;
 using Hangfire;
 using Infrastructure;
 using Infrastructure.Services;
@@ -12,11 +10,11 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure application services
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddControllers();
 builder.Services.AddApplication();
 builder.Services.SetupServices();
-builder.Services.AddHttpContextAccessor();
 
 // Add services to the container
 builder.Services.AddEndpointsApiExplorer();
@@ -91,6 +89,8 @@ builder.Services.AddAuthentication(options =>
 });
 
 var app = builder.Build();
+
+app.UseStaticFiles();
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())

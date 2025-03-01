@@ -77,13 +77,15 @@ public static class Seeder
             {
                 Id = Guid.NewGuid(),
                 UserName = "adminUser",
-                Email = "admin@example.com"
+                Email = "admin@example.com",
+                EmailConfirmed = true
             };
             var usualUser = new User
             {
                 Id = Guid.NewGuid(),
                 UserName = "usualUser",
-                Email = "user@example.com"
+                Email = "user@example.com",
+                EmailConfirmed = true
             };
 
             await userManager.CreateAsync(adminUser, "AdminPass123!");

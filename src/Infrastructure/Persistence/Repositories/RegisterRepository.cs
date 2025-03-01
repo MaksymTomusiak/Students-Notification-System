@@ -25,6 +25,15 @@ public class RegisterRepository(ApplicationDbContext context) : IRegisterReposit
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Register>> GetByUser(Guid userId, CancellationToken cancellationToken)
+    {
+        return await context.Registers
+            .AsNoTracking()
+            .Where(x => x.UserId == userId)
+            .OrderByDescending(x => x.RegisteredAt)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<(IReadOnlyList<Register> Items, int TotalCount, int Page, int PageSize)> GetByUserPaginated(Guid userId, int page, int pageSize, CancellationToken cancellationToken)
     {
         var totalCount = await context.Registers

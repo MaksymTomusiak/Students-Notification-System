@@ -72,6 +72,8 @@ public class UsersController(
 
         return Ok(paginatedResponse);
     }
+    
+    
 
     [HttpPost("login")]
     public async Task<ActionResult> Login([FromBody] UserLoginDto request)
@@ -227,7 +229,7 @@ public class UsersController(
             e => e.ToObjectResult());
     }
 
-    [HttpGet("user-registers/{userId:guid}")]
+    [HttpGet("user-registers/paginated/{userId:guid}")]
     public async Task<ActionResult<PaginatedResponse<RegisterDto>>> GetUserRegisters(
         [FromRoute] Guid userId,
         [FromQuery] int page = 1,
@@ -245,5 +247,13 @@ public class UsersController(
         };
 
         return Ok(paginatedResponse);
+    }
+
+    [HttpGet("user-registers/{userId:guid}")]
+    public async Task<ActionResult<IEnumerable<RegisterDto>>> GetUserRegisters([FromRoute] Guid userId, CancellationToken cancellationToken)
+    {
+        var items = await registerQueries.GetByUser(userId, cancellationToken);
+
+        return Ok(items.Select(RegisterDto.FromDomainModel));
     }
 }

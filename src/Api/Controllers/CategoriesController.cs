@@ -34,8 +34,9 @@ public class CategoriesController(ISender sender, ICategoryQueries categoryQueri
         return Ok(paginatedResponse);
     }
     
+    [Authorize(Roles = "Admin,User")]
     [HttpGet]
-    public async Task<IEnumerable<CategoryDto>> GetAllPaginated(CancellationToken cancellationToken)
+    public async Task<IEnumerable<CategoryDto>> GetAll(CancellationToken cancellationToken)
     {
         var entities = await categoryQueries.GetAll(cancellationToken);
 
