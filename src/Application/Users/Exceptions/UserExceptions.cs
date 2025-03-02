@@ -40,6 +40,16 @@ public class UserWithNameAlreadyExistsException(Guid id)
 public class UserWithEmailAlreadyExistsException(Guid id)
     : UserException(id, $"User under such email already exists!");
 
+public class EmailNotVerifiedException(Guid id)
+    : UserException(id, $"User email is not verified!");
+
+public class InvalidVerificationTokenException(Guid id)
+    : UserException(id, $"Invalid verification token!");
+
+public class EmailVerificationTokenExpiredException(Guid id)
+    : UserException(id, $"Email verification token expired!");
+
+
 public class InvalidCredentialsException() 
     : UserException(Guid.Empty, $"Invalid credentials!");
 

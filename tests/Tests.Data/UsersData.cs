@@ -20,7 +20,8 @@ public static class UsersData
             Id = Guid.NewGuid(),
             Email = "mainUser@gmail.com",
             SecurityStamp = Guid.NewGuid().ToString(),
-            UserName = "mainUserName"
+            UserName = "mainUserName",
+            EmailConfirmed = true
         };
     public static User SecondaryUser() => 
         new()
@@ -28,7 +29,8 @@ public static class UsersData
             Id = Guid.NewGuid(),
             Email = "secondaryUser@gmail.com",
             SecurityStamp = Guid.NewGuid().ToString(),
-            UserName = "secondaryUserName"
+            UserName = "secondaryUserName",
+            EmailConfirmed = true
         };
     
     public static User AdminUser() => 
@@ -37,6 +39,7 @@ public static class UsersData
             Id = Guid.NewGuid(),
             Email = "testAdminUser@gmail.com",
             SecurityStamp = Guid.NewGuid().ToString(),
-            UserName = "testAdminUserName"
+            UserName = "testAdminUserName",
+            EmailConfirmed = true
         };
 }

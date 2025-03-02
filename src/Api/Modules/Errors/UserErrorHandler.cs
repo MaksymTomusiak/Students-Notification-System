@@ -22,7 +22,10 @@ public static class UserErrorHandler
                 or UserAlreadyRegisteredException
                 or UserNotRegisteredException
                 or UserAlreadyLeftFeedbackException
-                or UserBannedException => StatusCodes.Status409Conflict,
+                or UserBannedException
+                or EmailNotVerifiedException
+                or InvalidVerificationTokenException
+                or EmailVerificationTokenExpiredException => StatusCodes.Status409Conflict,
                 UserUnknownException => StatusCodes.Status500InternalServerError,
                 UserUnauthorizedAccessException => StatusCodes.Status401Unauthorized,
                 _ => throw new NotImplementedException("User error handler is not implemented")

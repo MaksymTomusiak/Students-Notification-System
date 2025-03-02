@@ -1,11 +1,11 @@
-﻿@model (string CourseName, int DaysBefore)
+﻿@model string
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Course Start Reminder</title>
+    <title>Email Verification Success</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -50,15 +50,15 @@
 <body>
 <div class="container">
     <div class="header">
-        <h1>Course Starts Alert!</h1>
+        <h1>Email Verification Success</h1>
     </div>
     <div class="content">
-        <p>Hello there!</p>
-        <p>We’re excited to remind you that your course '<span class="highlight">@Model.CourseName</span>' is starting in <span class="highlight">@Model.DaysBefore</span> day(s). Get ready for an amazing learning experience!</p>
-        <p>Stay tuned for more updates, and feel free to reach out if you have any questions.</p>
+        <p>Congratulations, your email has been verified successfully!</p>
+        <p>You can now <a href="http://localhost:5173/login" class="highlight">log in</a> to your account.</p>
+        <p>Thank you for joining the Students Notification System.</p>
     </div>
     <div class="footer">
-        <p>&copy; 2025 Students notification system. All rights reserved.</p>
+        <p>© 2025 Students Notification System. All rights reserved.</p>
     </div>
 </div>
 </body>

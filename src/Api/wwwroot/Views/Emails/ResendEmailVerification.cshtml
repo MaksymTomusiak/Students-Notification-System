@@ -1,11 +1,11 @@
-﻿@model (string CourseName, int DaysBefore)
+﻿@model (string UserName, string VerificationLink)
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Course Start Reminder</title>
+    <title>Email Verification</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -50,15 +50,17 @@
 <body>
 <div class="container">
     <div class="header">
-        <h1>Course Starts Alert!</h1>
+        <h1>Email Verification</h1>
     </div>
     <div class="content">
-        <p>Hello there!</p>
-        <p>We’re excited to remind you that your course '<span class="highlight">@Model.CourseName</span>' is starting in <span class="highlight">@Model.DaysBefore</span> day(s). Get ready for an amazing learning experience!</p>
+        <p>Hello <span class="highlight">@Model.UserName</span>,</p>
+        <p>We noticed you requested to resend your email verification. Please verify your email address by clicking the link below:</p>
+        <a href="@Model.VerificationLink" class="highlight">Verify Email</a>
+        <p>This link will expire in 24 hours.</p>
         <p>Stay tuned for more updates, and feel free to reach out if you have any questions.</p>
     </div>
     <div class="footer">
-        <p>&copy; 2025 Students notification system. All rights reserved.</p>
+        <p>© 2025 Students Notification System. All rights reserved.</p>
     </div>
 </div>
 </body>

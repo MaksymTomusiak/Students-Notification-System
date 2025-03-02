@@ -38,17 +38,16 @@ public static class ConfigureServices
     private static void AddNotifications(IServiceCollection services)
     {
         services.AddControllersWithViews()
-            .AddRazorRuntimeCompilation(); // This is redundant if already called in Program.cs, but it’s fine here for completeness
+            .AddRazorRuntimeCompilation(); 
 
-        // Configure RazorViewEngineOptions to use the custom view location expander
         services.Configure<RazorViewEngineOptions>(options =>
         {
             options.ViewLocationExpanders.Add(new InfrastructureViewLocationExpander());
         });
 
-        services.AddSingleton<ITempDataProvider, CookieTempDataProvider>(); // Singleton to match ITempDataDictionaryFactory
-        services.AddSingleton<ICompositeViewEngine, CompositeViewEngine>(); // Ensure ICompositeViewEngine is registered
-        
+        services.AddSingleton<ITempDataProvider, CookieTempDataProvider>();
+        services.AddSingleton<ICompositeViewEngine, CompositeViewEngine>();
+        services.AddScoped<IEmailViewRenderer, EmailViewRenderer>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<ICourseNotificationService, CourseNotificationService>();
     }

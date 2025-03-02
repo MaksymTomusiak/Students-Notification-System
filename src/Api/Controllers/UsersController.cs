@@ -8,15 +8,10 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
 using Application.Common.Interfaces;
 using Domain.Roles;
-using Infrastructure.Authentication;
-using LanguageExt;
+using Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,9 +23,8 @@ public class UsersController(
     UserManager<User> userManager,
     ISender sender,
     IRegisterQueries registerQueries,
-    IOptions<JwtOptions> jwtOptions,
     IJwtProvider jwtProvider)
-    : ControllerBase
+    : Controller
 {
     [Authorize(Roles = "Admin")]
     [HttpGet]
@@ -147,7 +141,8 @@ public class UsersController(
             user = new User
             {
                 UserName = name ?? facebookId,
-                Email = userEmail
+                Email = userEmail,
+                EmailConfirmed = true
             };
             var createResult = await userManager.CreateAsync(user);
             if (!createResult.Succeeded)
@@ -181,6 +176,34 @@ public class UsersController(
         var result = await sender.Send(command);
         return result.Match(Ok, e => e.ToObjectResult());
     }
+    
+    [HttpGet("verify-email")]
+    public async Task<IActionResult> VerifyEmail([FromQuery] Guid userId, [FromQuery] string token)
+    {
+        var command = new VerifyEmailCommand { UserId = userId, Token = token };
+        var result = await sender.Send(command);
+        return result.Match<IActionResult>(
+            success =>
+            {
+                // On success, return the VerifyEmailSuccess view with the username
+                return View("VerifyEmailSuccess", success.UserName); // Uses VerifyEmailSuccess.cshtml
+            },
+            exception => exception.ToObjectResult() // This will return JSON for errors, which is consistent with API behavior
+        );
+    }
+
+    [HttpPost("resend-verification")]
+    public async Task<IActionResult> ResendVerificationEmail([FromBody] string email)
+    {
+        var command = new ResendVerificationEmailCommand { Email = email };
+        var result = await sender.Send(command);
+        return result.Match<IActionResult>(
+            success => Ok(new { message = "Verification email resent successfully" }),
+            exception => exception.ToObjectResult()
+        );
+    }
+    
+    
 
     [Authorize]
     [HttpDelete("delete/{userId:guid}")]

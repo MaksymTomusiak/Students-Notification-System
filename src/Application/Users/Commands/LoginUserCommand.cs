@@ -20,10 +20,23 @@ public class LoginUserCommandHandler(
     RoleManager<Role> roleManager) : IRequestHandler<LoginUserCommand, Either<UserException, string>>
 {
     const string UserRoleName = "User";
+
     public async Task<Either<UserException, string>> Handle(LoginUserCommand request, CancellationToken cancellationToken)
     {
         var user = await userManager.FindByEmailAsync(request.Email);
-        if (user == null || !await userManager.CheckPasswordAsync(user, request.Password))
+        if (user == null)
+        {
+            return new InvalidCredentialsException();
+        }
+
+        // Check if the user's email is confirmed
+        if (!user.EmailConfirmed)
+        {
+            return new EmailNotVerifiedException(user.Id);
+        }
+
+        // Verify password
+        if (!await userManager.CheckPasswordAsync(user, request.Password))
         {
             return new InvalidCredentialsException();
         }

@@ -1,4 +1,5 @@
-﻿using Infrastructure.Persistence;
+﻿using Application.Common.Interfaces.Services;
+using Infrastructure.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -6,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Moq;
 using Npgsql;
 using Testcontainers.PostgreSql;
 using Xunit;
@@ -30,8 +32,19 @@ public class IntegrationTestWebFactory : WebApplicationFactory<Program>, IAsyncL
             config.AddJsonFile("appsettings.Test.json", optional: false, reloadOnChange: true)
                 .AddEnvironmentVariables();
         });
+        
+        builder.ConfigureTestServices(services =>
+        {
+            RegisterDatabase(services);
 
-        builder.ConfigureTestServices(RegisterDatabase);
+            services.RemoveServiceByType(typeof(IEmailService));
+
+            var emailServiceMock = new Mock<IEmailService>();
+            emailServiceMock.Setup(x => x.SendEmail
+                (It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>()));
+
+            services.AddScoped(_ => emailServiceMock.Object);
+        });
     }
 
     private void RegisterDatabase(IServiceCollection services)

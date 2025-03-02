@@ -1,10 +1,13 @@
 ﻿using Application.Common.Interfaces;
+using Application.Common.Interfaces.Services;
 using Application.Users.Exceptions;
 using Domain.Roles;
 using Domain.Users;
+using Infrastructure.Services;
 using LanguageExt;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Users.Commands;
 
@@ -18,9 +21,13 @@ public record RegisterUserCommand : IRequest<Either<UserException, string>>
 public class RegisterUserCommandHandler(
     IJwtProvider jwtProvider,
     UserManager<User> userManager,
-    RoleManager<Role> roleManager) : IRequestHandler<RegisterUserCommand, Either<UserException, string>>
+    RoleManager<Role> roleManager,
+    IEmailService emailService,
+    IEmailViewRenderer emailViewRenderer)
+    : IRequestHandler<RegisterUserCommand, Either<UserException, string>>
 {
     private const string UserRoleName = "User";
+
     public async Task<Either<UserException, string>> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
     {
         var existingEmailUser = await userManager.FindByEmailAsync(request.Email);
@@ -38,7 +45,8 @@ public class RegisterUserCommandHandler(
         var user = new User
         {
             Email = request.Email,
-            UserName = request.UserName
+            UserName = request.UserName,
+            EmailConfirmed = false
         };
 
         var result = await userManager.CreateAsync(user, request.Password);
@@ -49,13 +57,31 @@ public class RegisterUserCommandHandler(
         
         if (!await roleManager.RoleExistsAsync(UserRoleName))
         {
-            await roleManager.CreateAsync(new Role {
+            await roleManager.CreateAsync(new Role 
+            { 
                 Id = Guid.NewGuid(),
-                Name = UserRoleName
+                Name = UserRoleName 
             });
         }
         await userManager.AddToRoleAsync(user, UserRoleName);
 
+        // Generate email verification token
+        var token = await userManager.GenerateEmailConfirmationTokenAsync(user);
+        user.EmailVerificationToken = token;
+        user.EmailVerificationTokenExpiration = DateTime.UtcNow.AddHours(24); // Token expires in 24 hours
+
+        // Update the user with the verification token
+        await userManager.UpdateAsync(user);
+
+        // Send verification email using EmailViewRenderer
+        var verificationLink = $"http://localhost:5256/users/verify-email?userId={user.Id}&token={Uri.EscapeDataString(token)}";
+        var model = (UserName: user.UserName, VerificationLink: verificationLink);
+        var subject = "Verify Your Email Address";
+        var htmlBody = emailViewRenderer.RenderView("EmailVerification", model, user.Email, subject);
+
+        emailService.SendEmail(user.Email, subject, htmlBody, isHtml: true);
+
+        // Return JWT token, but user must verify email before logging in
         var role = await roleManager.FindByNameAsync(UserRoleName);
         return jwtProvider.Generate(user, role);
     }

@@ -7,7 +7,7 @@ using MailKit.Security;
 
 namespace Infrastructure.Services;
 
-public class EmailService(IConfiguration configuration, ILogger<EmailService> logger) : IEmailService
+public class EmailService(IConfiguration configuration) : IEmailService
 {
     private readonly string _smtpHost = configuration["EmailSettings:SmtpHost"];
     private readonly int _smtpPort = int.Parse(configuration["EmailSettings:SmtpPort"]);
